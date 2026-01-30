@@ -1,6 +1,8 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { AlignCenter, AlignLeft, AlignRight, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, AlignVerticalJustifyStart, Bold, Check, Italic, Underline } from 'lucide-react-native';
-import React from 'react';
-import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { NativeScrollEvent, NativeSyntheticEvent, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePoem } from '../../context/PoemContext';
 
 const FONTS = [
@@ -23,8 +25,17 @@ const COLORS = [
 
 export default function FontToolbar({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const { activeConfig, updateConfig } = usePoem();
+  const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
+  const insets = useSafeAreaInsets();
 
   if (!visible) return null;
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 20;
+    const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+    setIsScrolledToBottom(isCloseToBottom);
+  };
 
   return (
     <View style={styles.container}>
@@ -37,8 +48,10 @@ export default function FontToolbar({ visible, onClose }: { visible: boolean; on
 
       <ScrollView 
         showsVerticalScrollIndicator={true} 
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 20) + 60 }]}
         indicatorStyle="black"
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
         
         {/* Font Family */}
@@ -196,10 +209,18 @@ export default function FontToolbar({ visible, onClose }: { visible: boolean; on
             </TouchableOpacity>
           ))}
         </View>
-
-        {/* Extra padding at bottom for scrolling */}
-        <View style={{ height: 60 }} />
       </ScrollView>
+
+      {!isScrolledToBottom && (
+        <LinearGradient
+          colors={['rgba(255,255,255,0)', 'rgba(255,255,255,1)']}
+          style={[
+            styles.gradientOverlay, 
+            { bottom: 0, height: Math.max(insets.bottom, 20) + 40 }
+          ]}
+          pointerEvents="none"
+        />
+      )}
     </View>
   );
 }
@@ -217,7 +238,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingBottom: 40,
     maxHeight: '60%',
     ...Platform.select({
       ios: {
@@ -234,16 +254,6 @@ const styles = StyleSheet.create({
       },
     }),
     zIndex: 20,
-  },
-  scrollIndicator: {
-    position: 'absolute',
-    bottom: 10,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingBottom: 20, // Move it up a bit into the view
-    opacity: 0.8,
   },
   header: {
     flexDirection: 'row',
@@ -354,5 +364,11 @@ const styles = StyleSheet.create({
   activeColorCircle: {
     borderColor: '#E5E7EB',
     transform: [{ scale: 1.1 }],
+  },
+  gradientOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 30,
   },
 });
