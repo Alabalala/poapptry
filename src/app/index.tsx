@@ -1,89 +1,92 @@
 import PaperBackground from '@/components/desk/PaperBackground';
 import React from 'react';
 import { Keyboard, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import DeskButton from '../components/ui/DeskButton';
+import BottomToolbar from '../components/ui/BottomToolbar';
+import TopBar from '../components/ui/TopBar';
 import { usePoem } from '../context/PoemContext';
+
+const FONT_CAPABILITIES: Record<string, { supportsBold: boolean; supportsItalic: boolean }> = {
+  'Crimson Text': { supportsBold: true, supportsItalic: true },
+  'Playfair Display': { supportsBold: true, supportsItalic: false },
+  'Courier Prime': { supportsBold: true, supportsItalic: true },
+  'PressStart2P': { supportsBold: false, supportsItalic: false },
+  'VT323': { supportsBold: false, supportsItalic: false },
+  'Caveat': { supportsBold: true, supportsItalic: false },
+};
 
 export default function Desk() {
   const { isEditing, toggleEditMode, activeConfig } = usePoem();
 
+  const fontCaps = FONT_CAPABILITIES[activeConfig.fontId] || { supportsBold: false, supportsItalic: false };
+  const shouldUseBold = activeConfig.isBold && fontCaps.supportsBold;
+  const shouldUseItalic = activeConfig.isItalic && fontCaps.supportsItalic;
+
   const handleBackgroundPress = () => {
-    // Dismiss keyboard if visible, otherwise toggle edit mode
-    // Or just toggle edit mode?
-    // "Edit Mode: Full UI visible. User can type... View Mode: UI is hidden."
-    // "Toggle: Tapping the paper background toggles between modes."
-    // The user said "Wrap the Root View in <TouchableWithoutFeedback> to handle the 'Tap Background to Toggle UI' logic."
-    
-    // If keyboard is up, tapping background usually dismisses it.
-    // I'll check keyboard state or just dismiss it and toggle.
-    // If I'm typing, I might want to just dismiss keyboard first?
-    // Let's simple toggle for now, but usually you want to dismiss keyboard.
     Keyboard.dismiss();
     toggleEditMode();
   };
 
   return (
-    <Pressable style={styles.deskContainer} onPress={handleBackgroundPress}>
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.contentContainer}>
-          {/* The Paper */}
-          <PaperBackground>
-            <TextInput
-              style={[
-                styles.input, 
-                { 
-                  fontFamily: activeConfig.fontId,
-                  color: activeConfig.inkColor 
-                }
-              ]}
-              multiline
-              placeholder={isEditing ? "Write your poem..." : ""}
-              placeholderTextColor="#555"
-              autoCapitalize="sentences"
-              autoCorrect={false}
-              editable={isEditing}
-              // Stop propagation if tapping input? 
-              // In RN, TextInput handles touch, so it shouldn't trigger parent onPress if handled?
-              // Actually, if editable=false (View mode), tapping it might trigger parent (good).
-              // If editable=true, tapping it focuses input (good).
-            />
-          </PaperBackground>
+    <View style={styles.container}>
+      {/* Top Bar (Visible in Edit Mode) */}
+      <TopBar />
 
-          {/* The UI (Buttons) */}
-          {isEditing && (
-            <View style={styles.uiContainer}>
-              <DeskButton 
-                iconName="drawer" 
-                label="Drawer" 
-                onPress={() => console.log('Open Drawer')} 
-              />
-              <View style={{ width: 40 }} />
-              <DeskButton 
-                iconName="stationery" 
-                label="Stationery" 
-                onPress={() => console.log('Open Stationery')} 
+      {/* Main Workspace */}
+      <View style={styles.workspace}>
+        {/* Background click handler - sits behind the paper */}
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleBackgroundPress} />
+        
+        {/* Paper Content - sits on top, clicks here won't trigger background press */}
+        <View style={styles.paperContainer} pointerEvents="box-none">
+          <PaperBackground>
+            <View style={{ flex: 1, justifyContent: activeConfig.verticalAlign === 'top' ? 'flex-start' : activeConfig.verticalAlign === 'center' ? 'center' : 'flex-end' }}>
+              <TextInput
+                style={[
+                  styles.input, 
+                  { 
+                    fontFamily: activeConfig.fontId,
+                    color: activeConfig.inkColor,
+                    fontSize: activeConfig.fontSize === 'small' ? 16 : activeConfig.fontSize === 'medium' ? 18 : 22,
+                    textAlign: activeConfig.textAlign,
+                    lineHeight: (activeConfig.fontSize === 'small' ? 16 : activeConfig.fontSize === 'medium' ? 18 : 22) * activeConfig.lineSpacing,
+                    fontWeight: shouldUseBold ? 'bold' : 'normal',
+                    fontStyle: shouldUseItalic ? 'italic' : 'normal',
+                    textDecorationLine: activeConfig.isUnderline ? 'underline' : 'none',
+                  }
+                ]}
+                multiline
+                placeholder={isEditing ? "Write your poem..." : ""}
+                placeholderTextColor="#9CA3AF"
+                autoCapitalize="sentences"
+                autoCorrect={false}
+                editable={isEditing}
               />
             </View>
-          )}
+          </PaperBackground>
         </View>
-      </SafeAreaView>
-    </Pressable>
+      </View>
+
+      {/* Bottom Toolbar (Visible in Edit Mode) */}
+      <BottomToolbar />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  deskContainer: {
+  container: {
     flex: 1,
-    backgroundColor: '#F5F5DC', // Beige/Cream desk color
+    backgroundColor: '#E5E7EB', // Slightly darker gray (Gray-200) for contrast
   },
-  safeArea: {
-    flex: 1,
-  },
-  contentContainer: {
+  workspace: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  paperContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 80, // Space for bottom toolbar
   },
   input: {
     flex: 1,
@@ -98,12 +101,5 @@ const styles = StyleSheet.create({
         outlineStyle: 'none',
       } as any,
     }),
-  },
-  uiContainer: {
-    flexDirection: 'row',
-    position: 'absolute',
-    bottom: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

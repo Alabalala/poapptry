@@ -1,6 +1,12 @@
 import { PoemProvider } from '@/context/PoemContext';
 import { Caveat_400Regular, Caveat_700Bold } from '@expo-google-fonts/caveat';
 import {
+  CourierPrime_400Regular,
+  CourierPrime_400Regular_Italic,
+  CourierPrime_700Bold,
+  CourierPrime_700Bold_Italic
+} from '@expo-google-fonts/courier-prime';
+import {
   CrimsonText_400Regular,
   CrimsonText_400Regular_Italic,
   CrimsonText_600SemiBold,
@@ -28,7 +34,11 @@ export default function RootLayout() {
     'Crimson Text Bold': CrimsonText_600SemiBold,
     'Playfair Display': PlayfairDisplay_400Regular,
     'Playfair Display Bold': PlayfairDisplay_700Bold,
-    'Press Start 2P': PressStart2P_400Regular,
+    'PressStart2P': PressStart2P_400Regular,
+    'Courier Prime': CourierPrime_400Regular,
+    'Courier Prime Italic': CourierPrime_400Regular_Italic,
+    'Courier Prime Bold': CourierPrime_700Bold,
+    'Courier Prime Bold Italic': CourierPrime_700Bold_Italic,
     'VT323': VT323_400Regular,
     'Caveat': Caveat_400Regular,
     'Caveat Bold': Caveat_700Bold,
