@@ -12,23 +12,31 @@
 - **Backend:** Firebase (Web SDK)
 - **Internationalization:** `i18next` + `react-i18next` (EN/ES support). Detects device language.
 
-## 3. Data Model (Firestore)
-- **Collection `poems`:**
+## 3. Data Model (Firestore & Local Storage)
+- **Collection `poems` (or Local Storage Object):**
   - `id`: string
   - `title`: string
-  - `body`: string
-  - `authorUid`: string
+  - `pages`: Array<{
+      `id`: string,
+      `content`: string
+    }>
+  - `authorUid`: string | null (null for guest)
   - `createdAt`: number
   - `isPublic`: boolean (Default: false)
   
   // The "Vibe" Configuration
   - `config`: {
-      `presetId`: 'classic' | 'old_classic' | 'pixel' | 'old_machine' | 'rainbow' | 'ancient',
-      `fontFamily`: string,
+      `presetId`: string,
       `paperId`: string,
-      `textAlign`: 'left' | 'center',
-      `fontSize`: number,
-      `inkColor`: string
+      `fontId`: string,
+      `inkColor`: string,
+      `fontSize`: 'small' | 'medium' | 'large',
+      `textAlign`: 'left' | 'center' | 'right',
+      `verticalAlign`: 'top' | 'center' | 'bottom',
+      `lineSpacing`: number,
+      `isBold`: boolean,
+      `isItalic`: boolean,
+      `isUnderline`: boolean
     }
 
   // Fixed Decorations
@@ -41,9 +49,10 @@
 
   // Free-floating Decorations
   - `stamps`: Array<{ 
-      `id`: string,       // e.g. 'stamp_1'
-      `x`: number,        // Percentage (0-100)
-      `y`: number,        // Percentage (0-100)
+      `id`: string,       // Unique Instance ID
+      `assetId`: string,  // e.g. 'stamp_1'
+      `x`: number,        // Percentage (0-100) or Absolute
+      `y`: number,        // Percentage (0-100) or Absolute
       `rotation`: number, // Degrees
       `scale`: number,    // 0.5 to 2.0
       `opacity`: number   // 0.3 to 1.0

@@ -1,4 +1,5 @@
-import React, { createContext, ReactNode, useContext, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { useToast } from './ToastContext';
 
 export type PoemConfig = {
@@ -95,6 +96,53 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
   // Drag and Drop State
   const [draggedStamp, setDraggedStamp] = useState<{ assetId: string; x: number; y: number } | null>(null);
   const [paperBounds, setPaperBounds] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+
+  // Persistence Key
+  const STORAGE_KEY = 'poapptry_current_poem';
+
+  // Load data on mount
+  useEffect(() => {
+    const loadPoem = async () => {
+      try {
+        const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
+        if (jsonValue != null) {
+          const savedPoem = JSON.parse(jsonValue);
+          // Restore state
+          if (savedPoem.title) setTitle(savedPoem.title);
+          if (savedPoem.pages) setPages(savedPoem.pages);
+          if (savedPoem.activeConfig) setActiveConfig(savedPoem.activeConfig);
+          if (savedPoem.fixedDecorations) setFixedDecorations(savedPoem.fixedDecorations);
+          if (savedPoem.stamps) setStamps(savedPoem.stamps);
+        }
+      } catch (e) {
+        console.error('Failed to load poem data', e);
+      }
+    };
+    loadPoem();
+  }, []);
+
+  // Save data on changes (Debounced)
+  useEffect(() => {
+    const saveData = async () => {
+      try {
+        const poemData = {
+          title,
+          pages,
+          activeConfig,
+          fixedDecorations,
+          stamps,
+          updatedAt: Date.now(),
+        };
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(poemData));
+      } catch (e) {
+        console.error('Failed to save poem data', e);
+      }
+    };
+
+    const timeoutId = setTimeout(saveData, 1000); // Save after 1 second of inactivity
+
+    return () => clearTimeout(timeoutId);
+  }, [title, pages, activeConfig, fixedDecorations, stamps]);
 
   const toggleEditMode = () => setIsEditing((prev) => !prev);
 
