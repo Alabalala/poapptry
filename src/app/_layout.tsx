@@ -1,4 +1,5 @@
 import { PoemProvider } from '@/context/PoemContext';
+import { ToastProvider } from '@/context/ToastContext';
 import { Caveat_400Regular, Caveat_700Bold } from '@expo-google-fonts/caveat';
 import {
   CourierPrime_400Regular,
@@ -55,12 +56,14 @@ export default function RootLayout() {
   }
 
   return (
-    <PoemProvider>
-      <SafeAreaProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-        </Stack>
-      </SafeAreaProvider>
-    </PoemProvider>
+    <ToastProvider>
+      <PoemProvider>
+        <SafeAreaProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+          </Stack>
+        </SafeAreaProvider>
+      </PoemProvider>
+    </ToastProvider>
   );
 }

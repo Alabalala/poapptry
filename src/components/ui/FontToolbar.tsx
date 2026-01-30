@@ -21,6 +21,9 @@ const COLORS = [
   '#047857', // Emerald
   '#B91C1C', // Ruby
   '#7C3AED', // Violet
+  '#FFFFFF', // White
+  '#FEF3C7', // Cream
+  '#33FF33', // Retro Green
 ];
 
 export default function FontToolbar({ visible, onClose }: { visible: boolean; onClose: () => void }) {
@@ -195,19 +198,25 @@ export default function FontToolbar({ visible, onClose }: { visible: boolean; on
         {/* Colors */}
         <SectionLabel label="Color" />
         <View style={styles.colorRow}>
-          {COLORS.map((color) => (
-            <TouchableOpacity
-              key={color}
-              onPress={() => updateConfig({ inkColor: color })}
-              style={[
-                styles.colorCircle,
-                { backgroundColor: color },
-                activeConfig.inkColor === color && styles.activeColorCircle
-              ]}
-            >
-              {activeConfig.inkColor === color && <Check size={16} color="#FFF" />}
-            </TouchableOpacity>
-          ))}
+          {COLORS.map((color) => {
+            const isLight = ['#FFFFFF', '#FEF3C7', '#33FF33'].includes(color);
+            return (
+              <TouchableOpacity
+                key={color}
+                onPress={() => updateConfig({ inkColor: color })}
+                style={[
+                  styles.colorCircle,
+                  { backgroundColor: color },
+                  color === '#FFFFFF' && { borderWidth: 1, borderColor: '#E5E7EB' },
+                  activeConfig.inkColor === color && styles.activeColorCircle
+                ]}
+              >
+                {activeConfig.inkColor === color && (
+                  <Check size={16} color={isLight ? '#000' : '#FFF'} />
+                )}
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </ScrollView>
 
@@ -350,6 +359,7 @@ const styles = StyleSheet.create({
   },
   colorRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
   },
   colorCircle: {

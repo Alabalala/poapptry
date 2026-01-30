@@ -4,13 +4,18 @@ import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePoem } from '../../context/PoemContext';
 import FontToolbar from './FontToolbar';
+import StationeryToolbar from './StationeryToolbar';
 
 export default function BottomToolbar() {
   const { isEditing } = usePoem();
   const insets = useSafeAreaInsets();
-  const [showFontToolbar, setShowFontToolbar] = useState(false);
+  const [activeToolbar, setActiveToolbar] = useState<'none' | 'font' | 'stationery'>('none');
 
   if (!isEditing) return null;
+
+  const toggleToolbar = (toolbar: 'font' | 'stationery') => {
+    setActiveToolbar(current => current === toolbar ? 'none' : toolbar);
+  };
 
   return (
     <>
@@ -22,20 +27,22 @@ export default function BottomToolbar() {
             onPress={() => console.log('Drawer')} 
           />
           <ToolbarButton 
-            icon={<Palette size={18} color="#4B5563" />} 
+            icon={<Palette size={18} color={activeToolbar === 'stationery' ? "#3B82F6" : "#4B5563"} />} 
             label="Stationery" 
-            onPress={() => console.log('Stationery')} 
+            isActive={activeToolbar === 'stationery'}
+            onPress={() => toggleToolbar('stationery')} 
           />
           <ToolbarButton 
-            icon={<Type size={18} color={showFontToolbar ? "#3B82F6" : "#4B5563"} />} 
+            icon={<Type size={18} color={activeToolbar === 'font' ? "#3B82F6" : "#4B5563"} />} 
             label="Font" 
-            isActive={showFontToolbar}
-            onPress={() => setShowFontToolbar(true)} 
+            isActive={activeToolbar === 'font'}
+            onPress={() => toggleToolbar('font')} 
           />
         </View>
       </View>
       
-      <FontToolbar visible={showFontToolbar} onClose={() => setShowFontToolbar(false)} />
+      <FontToolbar visible={activeToolbar === 'font'} onClose={() => setActiveToolbar('none')} />
+      <StationeryToolbar visible={activeToolbar === 'stationery'} onClose={() => setActiveToolbar('none')} />
     </>
   );
 }

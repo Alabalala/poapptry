@@ -1,9 +1,10 @@
 import PaperBackground from '@/components/desk/PaperBackground';
+import DragOverlay from '@/components/ui/DragOverlay';
 import React, { useRef, useState } from 'react';
 import { Keyboard, Platform, Pressable, StyleSheet, TextInput, TextStyle, View } from 'react-native';
 import BottomToolbar from '../components/ui/BottomToolbar';
 import TopBar from '../components/ui/TopBar';
-import { usePoem } from '../context/PoemContext';
+import { PoemConfig, usePoem } from '../context/PoemContext';
 
 const FONT_CAPABILITIES: Record<string, { supportsBold: boolean; supportsItalic: boolean }> = {
   'Crimson Text': { supportsBold: true, supportsItalic: true },
@@ -15,7 +16,7 @@ const FONT_CAPABILITIES: Record<string, { supportsBold: boolean; supportsItalic:
 };
 
 export default function Desk() {
-  const { isEditing, toggleEditMode, activeConfig, pages, updatePageContent } = usePoem();
+  const { isEditing, toggleEditMode, activeConfig, pages, updatePageContent, setSelectedStampId } = usePoem();
 
   const fontCaps = FONT_CAPABILITIES[activeConfig.fontId] || { supportsBold: false, supportsItalic: false };
   const shouldUseBold = activeConfig.isBold && fontCaps.supportsBold;
@@ -23,6 +24,10 @@ export default function Desk() {
 
   const handleBackgroundPress = () => {
     Keyboard.dismiss();
+    setSelectedStampId(null);
+    // If we were just deselecting a stamp, maybe we shouldn't toggle edit mode? 
+    // But for now, let's keep the existing behavior of toggling edit mode on background tap
+    // as that seems to be the primary function of the desk background.
     toggleEditMode();
   };
 
@@ -57,8 +62,20 @@ export default function Desk() {
 
       {/* Bottom Toolbar (Visible in Edit Mode) */}
       <BottomToolbar />
+      
+      {/* Global Drag Overlay */}
+      <DragOverlay />
     </View>
   );
+}
+
+interface PageInputProps {
+  content: string;
+  onUpdate: (text: string) => void;
+  activeConfig: PoemConfig;
+  isEditing: boolean;
+  shouldUseBold: boolean;
+  shouldUseItalic: boolean;
 }
 
 function PageInput({ 
@@ -68,7 +85,8 @@ function PageInput({
   isEditing, 
   shouldUseBold, 
   shouldUseItalic,
-}: any) {
+}: PageInputProps) {
+  const { setSelectedStampId } = usePoem();
   const inputRef = useRef<TextInput>(null);
   const [paperHeight, setPaperHeight] = useState(0);
 
@@ -114,13 +132,17 @@ function PageInput({
         justifyContent: getJustifyContent() as any
       }} 
       onLayout={(e) => setPaperHeight(e.nativeEvent.layout.height)}
-      onPress={() => inputRef.current?.focus()}
+      onPress={() => {
+        setSelectedStampId(null);
+        inputRef.current?.focus();
+      }}
     >
       {/* Actual Input */}
       <TextInput
         ref={inputRef}
         value={content}
         onChangeText={onUpdate}
+        onFocus={() => setSelectedStampId(null)}
         onContentSizeChange={(e) => setContentHeight(e.nativeEvent.contentSize.height)}
         style={[
           styles.input, 
@@ -148,6 +170,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#E5E7EB',
+    overflow: 'hidden',
+    ...Platform.select({
+      web: {
+        overflowX: 'hidden',
+        maxWidth: '100vw',
+      } as any,
+    }),
   },
   workspace: {
     flex: 1,
