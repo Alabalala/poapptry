@@ -1,3 +1,4 @@
+
 export const PAPERS = {
   paper_aged: require('../../assets/papers/paper_aged.png'),
   paper_classic: require('../../assets/papers/paper_classic.png'),
@@ -41,7 +42,7 @@ export const BOOKMARKS = {
 // or maybe I should try to make it cleaner. 
 // I will just write them out because `require` needs string literals.
 
-export const STAMPS: Record<string, any> = {
+export const STAMPS: Record<string, ImageSourcePropType> = {
   stamp_1: require('../../assets/stamps/stamp-1.png'),
   stamp_2: require('../../assets/stamps/stamp-2.png'),
   stamp_3: require('../../assets/stamps/stamp-3.png'),
