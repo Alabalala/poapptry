@@ -23,15 +23,22 @@ export interface Decoration {
   opacity: number;
 }
 
+export interface Page {
+  id: string;
+  content: string;
+}
+
 interface PoemContextType {
   isEditing: boolean;
   title: string;
   activeConfig: PoemConfig;
   decorations: Decoration[];
+  pages: Page[];
   toggleEditMode: () => void;
   setTitle: (title: string) => void;
   updateConfig: (updates: Partial<PoemConfig>) => void;
   setDecorations: (decorations: Decoration[]) => void;
+  updatePageContent: (id: string, content: string) => void;
 }
 
 const PoemContext = createContext<PoemContextType | undefined>(undefined);
@@ -39,6 +46,7 @@ const PoemContext = createContext<PoemContextType | undefined>(undefined);
 export function PoemProvider({ children }: { children: ReactNode }) {
   const [isEditing, setIsEditing] = useState(true);
   const [title, setTitle] = useState('Untitled Poem');
+  const [pages, setPages] = useState<Page[]>([{ id: '1', content: '' }]);
   const [activeConfig, setActiveConfig] = useState<PoemConfig>({
     presetId: 'classic',
     paperId: 'paper_classic',
@@ -60,6 +68,10 @@ export function PoemProvider({ children }: { children: ReactNode }) {
     setActiveConfig((prev) => ({ ...prev, ...updates }));
   };
 
+  const updatePageContent = (id: string, content: string) => {
+    setPages((prev) => prev.map((p) => (p.id === id ? { ...p, content } : p)));
+  };
+
   return (
     <PoemContext.Provider
       value={{
@@ -67,10 +79,12 @@ export function PoemProvider({ children }: { children: ReactNode }) {
         title,
         activeConfig,
         decorations,
+        pages,
         toggleEditMode,
         setTitle,
         updateConfig,
         setDecorations,
+        updatePageContent,
       }}
     >
       {children}

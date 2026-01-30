@@ -7,7 +7,7 @@ const FONTS = [
   'Crimson Text',
   'Playfair Display',
   'Courier Prime',
-  'Press Start 2P',
+  'PressStart2P',
   'VT323',
   'Caveat',
 ];
@@ -234,6 +234,16 @@ const styles = StyleSheet.create({
       },
     }),
     zIndex: 20,
+  },
+  scrollIndicator: {
+    position: 'absolute',
+    bottom: 10,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 20, // Move it up a bit into the view
+    opacity: 0.8,
   },
   header: {
     flexDirection: 'row',
