@@ -85,3 +85,54 @@ graph TD
         C -->|Tap a Poem| A[Load Poem onto Desk]
         C -->|Swipe Left| C1[Delete]
     end
+```
+
+## 5. Technical Constraints & Fixes
+
+### Text Input Sizing vs. Alignment (React Native Web)
+**Problem:** 
+On React Native Web, `TextInput` (mapped to HTML `textarea`) has conflicting behaviors:
+1.  **Full Page Clickability:** Requires the input to fill the container (`minHeight: 100%`).
+2.  **Vertical Alignment:** Standard CSS vertical alignment (e.g., `justify-content`) breaks when the `textarea` is forced to 100% height. It fills the space, making "centering" irrelevant in Flexbox terms because the child is as big as the parent.
+
+**Solution (The "Ghost Text" Pattern):**
+We use a platform-specific approach to achieve both full-page clickability and correct vertical alignment.
+
+- **Native (iOS/Android):** 
+  - Simply uses `textAlignVertical: 'top' | 'center' | 'bottom'`. This is a native prop that works perfectly with `minHeight: '100%'`.
+
+- **Web:**
+  - **Full Height:** The `TextInput` is given `minHeight: '100%'` so clicks anywhere on the page focus the input immediately.
+  - **Ghost Measurement:** We render a hidden `<Text>` component ("Ghost Text") that mirrors the input's content, font, width, and line height. This element is `position: absolute` and `opacity: 0`.
+  - **Dynamic Padding:** We measure the height of the Ghost Text via `onLayout`. We then calculate the `paddingTop` needed to simulate vertical alignment:
+    - **Top:** `0`
+    - **Center:** `(PaperHeight - TextHeight) / 2`
+    - **Bottom:** `PaperHeight - TextHeight`
+
+**Code Example:**
+```tsx
+// 1. Ghost Text (Web Only)
+{isWeb && (
+  <Text
+    style={[textStyle, { position: 'absolute', opacity: 0 }]}
+    onLayout={(e) => {
+      const h = e.nativeEvent.layout.height;
+      // Calculate padding based on paperHeight and this text height
+      setPaddingTop(calculateWebPadding(h, paperHeight));
+    }}
+  >
+    {content}
+  </Text>
+)}
+
+// 2. Main Input
+<TextInput
+  style={{
+    minHeight: '100%', // Fills page
+    paddingTop: isWeb ? paddingTop : 0, // Simulated alignment
+    textAlignVertical: isWeb ? 'top' : activeConfig.verticalAlign // Native alignment
+  }}
+/>
+```
+
+## 6. Future Considerations

@@ -1,7 +1,7 @@
 import PaperBackground from '@/components/desk/PaperBackground';
 import DragOverlay from '@/components/ui/DragOverlay';
 import React, { useRef, useState } from 'react';
-import { Keyboard, Platform, Pressable, StyleSheet, TextInput, TextStyle, View } from 'react-native';
+import { Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TextStyle, View } from 'react-native';
 import BottomToolbar from '../components/ui/BottomToolbar';
 import TopBar from '../components/ui/TopBar';
 import { PoemConfig, usePoem } from '../context/PoemContext';
@@ -40,24 +40,32 @@ export default function Desk() {
 
       {/* Main Workspace */}
         <View style={styles.workspace}>
-          {/* Background click handler - sits behind the paper */}
-          <Pressable style={StyleSheet.absoluteFill} onPress={handleBackgroundPress} />
-          
-          {/* Paper Content - Single Page View */}
-          <View style={styles.centerContent} pointerEvents="box-none">
-            <View key={activePage.id} style={styles.paperContainer}>
-              <PaperBackground>
-                <PageInput 
-                  content={activePage.content}
-                  onUpdate={(text: string) => updatePageContent(activePage.id, text)}
-                  activeConfig={activeConfig}
-                  isEditing={isEditing}
-                  shouldUseBold={shouldUseBold}
-                  shouldUseItalic={shouldUseItalic}
-                />
-              </PaperBackground>
-            </View>
-          </View>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={true}
+            showsHorizontalScrollIndicator={false}
+          >
+            {/* Background click handler - wraps content to detect taps outside paper */}
+            <Pressable 
+              style={styles.scrollContentPressable} 
+              onPress={handleBackgroundPress}
+            >
+              {/* Paper Content - Single Page View */}
+              <View key={activePage.id} style={styles.paperContainer}>
+                <PaperBackground>
+                  <PageInput 
+                    content={activePage.content}
+                    onUpdate={(text: string) => updatePageContent(activePage.id, text)}
+                    activeConfig={activeConfig}
+                    isEditing={isEditing}
+                    shouldUseBold={shouldUseBold}
+                    shouldUseItalic={shouldUseItalic}
+                  />
+                </PaperBackground>
+              </View>
+            </Pressable>
+          </ScrollView>
         </View>
 
       {/* Bottom Toolbar (Visible in Edit Mode) */}
@@ -89,27 +97,54 @@ function PageInput({
   const { setSelectedStampId } = usePoem();
   const inputRef = useRef<TextInput>(null);
   const [paperHeight, setPaperHeight] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
 
   // Constants
   const VERTICAL_PADDING = 40;
-  // If we haven't measured paper height yet, default to a reasonable height
-  const MAX_TEXT_HEIGHT = paperHeight > 0 ? paperHeight : 600;
+  
+  // Padding state for Web vertical alignment simulation
+  const [paddingTop, setPaddingTop] = useState(0);
+  const isWeb = Platform.OS === 'web';
 
-  // We need to estimate content height for vertical alignment since we removed ghost text measurement.
-  // We can use onContentSizeChange from TextInput to get the height of the content.
-  const [contentHeight, setContentHeight] = useState(0);
+  const calculateWebPadding = (contentH: number, paperH: number) => {
+    if (!isWeb) return 0;
+    if (paperH <= 0) return 0;
 
-  const getJustifyContent = () => {
-    // If content overflows the safe area, always align to top so we can see the start
-    const safeHeight = Math.max(0, paperHeight - (VERTICAL_PADDING * 2));
-    if (contentHeight > safeHeight) return 'flex-start';
+    const availableHeight = Math.max(0, paperH - (VERTICAL_PADDING * 2));
+    
+    if (contentH >= availableHeight) return 0;
 
     switch (activeConfig.verticalAlign) {
-      case 'center': return 'center';
-      case 'bottom': return 'flex-end';
-      default: return 'flex-start';
+      case 'center': 
+        return Math.max(0, (availableHeight - contentH) / 2);
+      case 'bottom': 
+        return Math.max(0, availableHeight - contentH);
+      default: 
+        return 0;
     }
   };
+
+  const handleGhostLayout = (e: any) => {
+    const h = e.nativeEvent.layout.height;
+    setContentHeight(h);
+    
+    if (isWeb) {
+      const newPadding = calculateWebPadding(h, paperHeight);
+      if (Math.abs(newPadding - paddingTop) > 1) {
+        setPaddingTop(newPadding);
+      }
+    }
+  };
+
+  // Recalculate padding when config or paper height changes
+  React.useEffect(() => {
+    if (isWeb && paperHeight > 0) {
+      const newPadding = calculateWebPadding(contentHeight, paperHeight);
+      if (Math.abs(newPadding - paddingTop) > 1) {
+        setPaddingTop(newPadding);
+      }
+    }
+  }, [activeConfig.verticalAlign, paperHeight]);
 
   const textStyle: TextStyle = { 
     fontFamily: activeConfig.fontId,
@@ -129,29 +164,57 @@ function PageInput({
         width: '100%', 
         overflow: 'hidden',
         paddingVertical: VERTICAL_PADDING,
-        justifyContent: getJustifyContent() as any
+        ...Platform.select({
+          web: { cursor: 'text' } as any
+        })
       }} 
       onLayout={(e) => setPaperHeight(e.nativeEvent.layout.height)}
-      onPress={() => {
+      onPress={(e) => {
+        e.stopPropagation();
         setSelectedStampId(null);
         inputRef.current?.focus();
       }}
     >
+      {/* Ghost Text for Web Measurement */}
+      {isWeb && (
+        <Text
+          style={[
+            styles.input,
+            textStyle,
+            {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              opacity: 0,
+              pointerEvents: 'none',
+              paddingTop: 0,
+              paddingBottom: 0,
+              height: undefined, // Allow it to grow naturally
+            }
+          ]}
+          onLayout={handleGhostLayout}
+        >
+          {content || ' '} 
+          {/* Add space to measure empty line height if needed, though mostly we care about existing text */}
+        </Text>
+      )}
+
       {/* Actual Input */}
       <TextInput
         ref={inputRef}
         value={content}
         onChangeText={onUpdate}
         onFocus={() => setSelectedStampId(null)}
-        onContentSizeChange={(e) => setContentHeight(e.nativeEvent.contentSize.height)}
+        onContentSizeChange={!isWeb ? (e) => setContentHeight(e.nativeEvent.contentSize.height) : undefined}
         style={[
           styles.input, 
           textStyle,
           {
-            height: undefined, // Let it grow to fit content
-            paddingTop: 0,
+            flex: 1,
+            minHeight: '100%',
+            paddingTop: isWeb ? paddingTop : 0,
             paddingBottom: 0,
-            textAlignVertical: 'top', 
+            textAlignVertical: isWeb ? 'top' : (activeConfig.verticalAlign || 'top') as any, 
           }
         ]}
         multiline
@@ -180,12 +243,14 @@ const styles = StyleSheet.create({
   },
   workspace: {
     flex: 1,
+    overflow: 'hidden', // Ensure workspace also clips content
   },
-  centerContent: {
-    flex: 1,
+  scrollContentPressable: {
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
+    paddingVertical: 40, // Add some breathing room
+    minHeight: '100%',
   },
   navContainer: {
     position: 'absolute',

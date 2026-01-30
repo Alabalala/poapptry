@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 /* Prevent horizontal scroll on web */
-body {
+html, body, #root {
+  width: 100%;
+  max-width: 100vw;
   overflow-x: hidden;
+  overscroll-behavior-x: none;
 }

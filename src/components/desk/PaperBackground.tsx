@@ -30,6 +30,8 @@ export default function PaperBackground({ children }: PaperBackgroundProps) {
     });
   };
 
+  const minHeight = paperLayout.width ? paperLayout.width / 0.7 : 400;
+
   // Fallback to classic if id not found
   const paperSource = PAPERS[activeConfig.paperId as keyof typeof PAPERS] || PAPERS.paper_classic;
   
@@ -53,12 +55,12 @@ export default function PaperBackground({ children }: PaperBackgroundProps) {
     <TouchableWithoutFeedback onPress={() => setSelectedStampId(null)}>
       <View style={styles.container}>
         {/* Stack Effect: A second sheet behind the main one */}
-        <View style={[styles.stackLayer, { transform: [{ rotate: '-1.5deg' }] }]} />
-        <View style={[styles.stackLayer, { transform: [{ rotate: '1deg' }] }]} />
+        <View style={[styles.stackLayer, { transform: [{ rotate: '-1.5deg' }], height: paperLayout.height || minHeight }]} />
+        <View style={[styles.stackLayer, { transform: [{ rotate: '1deg' }], height: paperLayout.height || minHeight }]} />
 
         <View 
           ref={containerRef}
-          style={styles.shadowContainer}
+          style={[styles.shadowContainer, { minHeight }]}
           onLayout={handleLayout}
         >
           <Image
@@ -124,7 +126,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '90%',
     maxWidth: 800,
-    aspectRatio: 0.7,
+    // aspectRatio removed to allow growth
     backgroundColor: '#FBFBFB',
     borderRadius: 2,
     borderWidth: 1,
@@ -133,7 +135,7 @@ const styles = StyleSheet.create({
   shadowContainer: {
     width: '90%',
     maxWidth: 800, // Limit width on large screens
-    aspectRatio: 0.7, // A4-ish ratio
+    // aspectRatio removed to allow growth
     backgroundColor: 'white', // Fallback color
     borderRadius: 2, // Sharpish corners for paper
     borderWidth: 1,
@@ -163,6 +165,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    width: '100%',
     overflow: 'hidden', // Ensure content doesn't bleed
     borderRadius: 2,
   },
