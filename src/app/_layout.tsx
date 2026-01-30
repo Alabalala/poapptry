@@ -1,20 +1,21 @@
 import { PoemProvider } from '@/context/PoemContext';
 import { Caveat_400Regular, Caveat_700Bold } from '@expo-google-fonts/caveat';
 import {
-    CrimsonText_400Regular,
-    CrimsonText_400Regular_Italic,
-    CrimsonText_600SemiBold,
-    useFonts
+  CrimsonText_400Regular,
+  CrimsonText_400Regular_Italic,
+  CrimsonText_600SemiBold,
+  useFonts
 } from '@expo-google-fonts/crimson-text';
 import {
-    PlayfairDisplay_400Regular,
-    PlayfairDisplay_700Bold
+  PlayfairDisplay_400Regular,
+  PlayfairDisplay_700Bold
 } from '@expo-google-fonts/playfair-display';
 import { PressStart2P_400Regular } from '@expo-google-fonts/press-start-2p';
 import { VT323_400Regular } from '@expo-google-fonts/vt323';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '../global.css';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -45,9 +46,11 @@ export default function RootLayout() {
 
   return (
     <PoemProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-      </Stack>
+      <SafeAreaProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+        </Stack>
+      </SafeAreaProvider>
     </PoemProvider>
   );
 }

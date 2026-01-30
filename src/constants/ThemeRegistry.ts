@@ -1,3 +1,4 @@
+import { ImageSourcePropType } from "react-native";
 
 export const PAPERS = {
   paper_aged: require('../../assets/papers/paper_aged.png'),
