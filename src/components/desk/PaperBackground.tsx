@@ -1,29 +1,34 @@
 import React from 'react';
-import { View, ImageBackground, StyleSheet, Platform } from 'react-native';
-import { usePoem } from '../../context/PoemContext';
+import { Image, Platform, StyleSheet, View } from 'react-native';
 import { PAPERS } from '../../constants/ThemeRegistry';
+import { usePoem } from '../../context/PoemContext';
 
 interface PaperBackgroundProps {
-  children?: React.ReactNode;
+  children: React.ReactNode;
 }
 
 export default function PaperBackground({ children }: PaperBackgroundProps) {
   const { activeConfig } = usePoem();
   
-  // Resolve the paper image source
+  // Fallback to classic if id not found
   const paperSource = PAPERS[activeConfig.paperId as keyof typeof PAPERS] || PAPERS.paper_classic;
 
   return (
     <View style={styles.container}>
       <View style={styles.shadowContainer}>
-        <ImageBackground
+        {/* 
+           Using absolute positioned Image instead of ImageBackground for better control 
+           over resizeMode on Web. 'stretch' ensures it fits the container exactly 
+           without zooming or cropping.
+        */}
+        <Image
           source={paperSource}
-          style={styles.paper}
-          imageStyle={styles.image}
-          resizeMode="cover"
-        >
+          style={[StyleSheet.absoluteFill, styles.paperImage]}
+          resizeMode="stretch"
+        />
+        <View style={styles.content}>
           {children}
-        </ImageBackground>
+        </View>
       </View>
     </View>
   );
@@ -38,9 +43,11 @@ const styles = StyleSheet.create({
   },
   shadowContainer: {
     width: '90%',
-    aspectRatio: 0.7,
-    backgroundColor: 'white', // Fallback for shadow
-    borderRadius: 4, // Slight rounding for paper
+    maxWidth: 800, // Limit width on large screens
+    aspectRatio: 0.7, // A4-ish ratio
+    backgroundColor: 'white', // Fallback color
+    borderRadius: 2, // Sharpish corners for paper
+    // Shadow props
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -56,12 +63,14 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  paper: {
+  paperImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 2,
+  },
+  content: {
     flex: 1,
-    overflow: 'hidden', // Ensure content/image respects border radius
-    borderRadius: 4,
-  },
-  image: {
-    borderRadius: 4,
-  },
+    overflow: 'hidden', // Ensure content doesn't bleed
+    borderRadius: 2,
+  }
 });

@@ -1,6 +1,6 @@
 import PaperBackground from '@/components/desk/PaperBackground';
 import React from 'react';
-import { Keyboard, Platform, StyleSheet, TextInput, TouchableWithoutFeedback, View } from 'react-native';
+import { Keyboard, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DeskButton from '../components/ui/DeskButton';
 import { usePoem } from '../context/PoemContext';
@@ -24,60 +24,58 @@ export default function Desk() {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={handleBackgroundPress}>
-      <View style={styles.deskContainer}>
-        <SafeAreaView style={styles.safeArea}>
-          <View style={styles.contentContainer}>
-            {/* The Paper */}
-            <PaperBackground>
-              <TextInput
-                style={[
-                  styles.input, 
-                  { 
-                    fontFamily: activeConfig.fontId,
-                    color: activeConfig.inkColor 
-                  }
-                ]}
-                multiline
-                placeholder={isEditing ? "Write your poem..." : ""}
-                placeholderTextColor="#555"
-                autoCapitalize="sentences"
-                autoCorrect={false}
-                editable={isEditing}
-                // Stop propagation if tapping input? 
-                // In RN, TextInput handles touch, so it shouldn't trigger parent onPress if handled?
-                // Actually, if editable=false (View mode), tapping it might trigger parent (good).
-                // If editable=true, tapping it focuses input (good).
-              />
-            </PaperBackground>
+    <Pressable style={styles.deskContainer} onPress={handleBackgroundPress}>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.contentContainer}>
+          {/* The Paper */}
+          <PaperBackground>
+            <TextInput
+              style={[
+                styles.input, 
+                { 
+                  fontFamily: activeConfig.fontId,
+                  color: activeConfig.inkColor 
+                }
+              ]}
+              multiline
+              placeholder={isEditing ? "Write your poem..." : ""}
+              placeholderTextColor="#555"
+              autoCapitalize="sentences"
+              autoCorrect={false}
+              editable={isEditing}
+              // Stop propagation if tapping input? 
+              // In RN, TextInput handles touch, so it shouldn't trigger parent onPress if handled?
+              // Actually, if editable=false (View mode), tapping it might trigger parent (good).
+              // If editable=true, tapping it focuses input (good).
+            />
+          </PaperBackground>
 
-            {/* The UI (Buttons) */}
-            {isEditing && (
-              <View style={styles.uiContainer}>
-                <DeskButton 
-                  iconName="drawer" 
-                  label="Drawer" 
-                  onPress={() => console.log('Open Drawer')} 
-                />
-                <View style={{ width: 40 }} />
-                <DeskButton 
-                  iconName="stationery" 
-                  label="Stationery" 
-                  onPress={() => console.log('Open Stationery')} 
-                />
-              </View>
-            )}
-          </View>
-        </SafeAreaView>
-      </View>
-    </TouchableWithoutFeedback>
+          {/* The UI (Buttons) */}
+          {isEditing && (
+            <View style={styles.uiContainer}>
+              <DeskButton 
+                iconName="drawer" 
+                label="Drawer" 
+                onPress={() => console.log('Open Drawer')} 
+              />
+              <View style={{ width: 40 }} />
+              <DeskButton 
+                iconName="stationery" 
+                label="Stationery" 
+                onPress={() => console.log('Open Stationery')} 
+              />
+            </View>
+          )}
+        </View>
+      </SafeAreaView>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   deskContainer: {
     flex: 1,
-    backgroundColor: '#E5E5E5', // Neutral desk color
+    backgroundColor: '#F5F5DC', // Beige/Cream desk color
   },
   safeArea: {
     flex: 1,
@@ -91,7 +89,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 18,
     lineHeight: 28,
-    padding: 24,
+    padding: 40,
     textAlignVertical: 'top',
     backgroundColor: 'transparent',
     borderWidth: 0,
