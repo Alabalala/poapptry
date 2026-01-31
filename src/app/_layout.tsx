@@ -1,21 +1,23 @@
+import { AuthProvider } from '@/context/AuthContext';
+import { LibraryProvider } from '@/context/LibraryContext';
 import { PoemProvider } from '@/context/PoemContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { Caveat_400Regular, Caveat_700Bold } from '@expo-google-fonts/caveat';
 import {
-  CourierPrime_400Regular,
-  CourierPrime_400Regular_Italic,
-  CourierPrime_700Bold,
-  CourierPrime_700Bold_Italic
+    CourierPrime_400Regular,
+    CourierPrime_400Regular_Italic,
+    CourierPrime_700Bold,
+    CourierPrime_700Bold_Italic
 } from '@expo-google-fonts/courier-prime';
 import {
-  CrimsonText_400Regular,
-  CrimsonText_400Regular_Italic,
-  CrimsonText_600SemiBold,
-  useFonts
+    CrimsonText_400Regular,
+    CrimsonText_400Regular_Italic,
+    CrimsonText_600SemiBold,
+    useFonts
 } from '@expo-google-fonts/crimson-text';
 import {
-  PlayfairDisplay_400Regular,
-  PlayfairDisplay_700Bold
+    PlayfairDisplay_400Regular,
+    PlayfairDisplay_700Bold
 } from '@expo-google-fonts/playfair-display';
 import { PressStart2P_400Regular } from '@expo-google-fonts/press-start-2p';
 import { VT323_400Regular } from '@expo-google-fonts/vt323';
@@ -57,13 +59,18 @@ export default function RootLayout() {
 
   return (
     <ToastProvider>
-      <PoemProvider>
-        <SafeAreaProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-          </Stack>
-        </SafeAreaProvider>
-      </PoemProvider>
+      <AuthProvider>
+        <LibraryProvider>
+          <PoemProvider>
+            <SafeAreaProvider>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="index" />
+                <Stack.Screen name="auth" options={{ presentation: 'modal' }} />
+              </Stack>
+            </SafeAreaProvider>
+          </PoemProvider>
+        </LibraryProvider>
+      </AuthProvider>
     </ToastProvider>
   );
 }

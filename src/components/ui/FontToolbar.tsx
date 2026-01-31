@@ -1,3 +1,4 @@
+import { FONT_CAPABILITIES } from '@/constants/ThemeRegistry';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AlignCenter, AlignLeft, AlignRight, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, AlignVerticalJustifyStart, Bold, Check, Italic, Underline } from 'lucide-react-native';
 import React, { useState } from 'react';
@@ -30,6 +31,8 @@ export default function FontToolbar({ visible, onClose }: { visible: boolean; on
   const { activeConfig, updateConfig } = usePoem();
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
   const insets = useSafeAreaInsets();
+
+  const fontCaps = FONT_CAPABILITIES[activeConfig.fontId] || { supportsBold: false, supportsItalic: false };
 
   if (!visible) return null;
 
@@ -175,18 +178,22 @@ export default function FontToolbar({ visible, onClose }: { visible: boolean; on
         {/* Style */}
         <SectionLabel label="Style" />
         <View style={[styles.buttonGroup, { marginBottom: 20 }]}>
-          <TouchableOpacity
-            onPress={() => updateConfig({ isBold: !activeConfig.isBold })}
-            style={[styles.groupButton, activeConfig.isBold && styles.activeGroupButton]}
-          >
-            <Bold size={18} color={activeConfig.isBold ? '#FFF' : '#374151'} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => updateConfig({ isItalic: !activeConfig.isItalic })}
-            style={[styles.groupButton, activeConfig.isItalic && styles.activeGroupButton]}
-          >
-            <Italic size={18} color={activeConfig.isItalic ? '#FFF' : '#374151'} />
-          </TouchableOpacity>
+          {fontCaps.supportsBold && (
+            <TouchableOpacity
+              onPress={() => updateConfig({ isBold: !activeConfig.isBold })}
+              style={[styles.groupButton, activeConfig.isBold && styles.activeGroupButton]}
+            >
+              <Bold size={18} color={activeConfig.isBold ? '#FFF' : '#374151'} />
+            </TouchableOpacity>
+          )}
+          {fontCaps.supportsItalic && (
+            <TouchableOpacity
+              onPress={() => updateConfig({ isItalic: !activeConfig.isItalic })}
+              style={[styles.groupButton, activeConfig.isItalic && styles.activeGroupButton]}
+            >
+              <Italic size={18} color={activeConfig.isItalic ? '#FFF' : '#374151'} />
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             onPress={() => updateConfig({ isUnderline: !activeConfig.isUnderline })}
             style={[styles.groupButton, activeConfig.isUnderline && styles.activeGroupButton]}

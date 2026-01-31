@@ -1,22 +1,20 @@
 import PaperBackground from '@/components/desk/PaperBackground';
 import DragOverlay from '@/components/ui/DragOverlay';
+import DrawerScreen from '@/components/ui/DrawerScreen';
+import SignUpPrompt from '@/components/ui/SignUpPrompt';
+import { FONT_CAPABILITIES } from '@/constants/ThemeRegistry';
+import { Edit2, Menu } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
-import { Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TextStyle, View } from 'react-native';
+import { Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, TextStyle, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomToolbar from '../components/ui/BottomToolbar';
 import TopBar from '../components/ui/TopBar';
 import { PoemConfig, usePoem } from '../context/PoemContext';
 
-const FONT_CAPABILITIES: Record<string, { supportsBold: boolean; supportsItalic: boolean }> = {
-  'Crimson Text': { supportsBold: true, supportsItalic: true },
-  'Playfair Display': { supportsBold: true, supportsItalic: false },
-  'Courier Prime': { supportsBold: true, supportsItalic: true },
-  'PressStart2P': { supportsBold: false, supportsItalic: false },
-  'VT323': { supportsBold: false, supportsItalic: false },
-  'Caveat': { supportsBold: true, supportsItalic: false },
-};
-
 export default function Desk() {
   const { isEditing, toggleEditMode, activeConfig, pages, updatePageContent, setSelectedStampId } = usePoem();
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const fontCaps = FONT_CAPABILITIES[activeConfig.fontId] || { supportsBold: false, supportsItalic: false };
   const shouldUseBold = activeConfig.isBold && fontCaps.supportsBold;
@@ -25,30 +23,40 @@ export default function Desk() {
   const handleBackgroundPress = () => {
     Keyboard.dismiss();
     setSelectedStampId(null);
-    // If we were just deselecting a stamp, maybe we shouldn't toggle edit mode? 
-    // But for now, let's keep the existing behavior of toggling edit mode on background tap
-    // as that seems to be the primary function of the desk background.
-    toggleEditMode();
+    // Only edit when clicking button as per request
+    // toggleEditMode();
   };
 
   const activePage = pages[0];
 
+  // Calculate dynamic padding for Edit Mode centering
+  // We want Visual Top Space = Visual Bottom Space
+  // Top Space = TopBarHeight + PaddingTop(40)
+  // Bottom Space = PaddingBottom - BottomToolbarHeight
+  // PaddingBottom = TopBarHeight + BottomToolbarHeight + PaddingTop(40)
+  const topBarHeight = insets.top + 56;
+  const bottomBarHeight = Math.max(insets.bottom, 20) + 50; // Approx pill height + padding
+  const editModePaddingBottom = topBarHeight + bottomBarHeight + 40;
+
   return (
     <View style={styles.container}>
+      <DrawerScreen isVisible={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
+
       {/* Top Bar (Visible in Edit Mode) */}
-      <TopBar />
+      <TopBar onBack={() => setIsDrawerOpen(true)} />
 
       {/* Main Workspace */}
         <View style={styles.workspace}>
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{ flexGrow: 1 }}
-            showsVerticalScrollIndicator={true}
-            showsHorizontalScrollIndicator={false}
+          <View
+            style={{ flex: 1, overflow: 'hidden' }}
           >
             {/* Background click handler - wraps content to detect taps outside paper */}
             <Pressable 
-              style={styles.scrollContentPressable} 
+              style={[
+                styles.scrollContentPressable,
+                isEditing && { paddingBottom: editModePaddingBottom },
+                Platform.OS === 'web' && { cursor: 'default' } as any
+              ]} 
               onPress={handleBackgroundPress}
             >
               {/* Paper Content - Single Page View */}
@@ -65,12 +73,35 @@ export default function Desk() {
                 </PaperBackground>
               </View>
             </Pressable>
-          </ScrollView>
+          </View>
         </View>
 
       {/* Bottom Toolbar (Visible in Edit Mode) */}
-      <BottomToolbar />
+      <BottomToolbar onOpenDrawer={() => setIsDrawerOpen(true)} />
+
+      {/* View Mode Controls */}
+      {!isEditing && (
+        <View style={[styles.viewModeControls, { bottom: Math.max(insets.bottom, 20) }]}>
+           <TouchableOpacity 
+             style={styles.viewModeButton} 
+             onPress={() => setIsDrawerOpen(true)}
+           >
+             <Menu size={24} color="#374151" />
+           </TouchableOpacity>
+           
+           <TouchableOpacity 
+             style={[styles.viewModeButton, styles.editButton]} 
+             onPress={() => toggleEditMode()}
+           >
+             <Edit2 size={24} color="#FFF" />
+             <Text style={styles.editButtonText}>Edit</Text>
+           </TouchableOpacity>
+        </View>
+      )}
       
+      {/* Sign Up Prompt */}
+      <SignUpPrompt />
+
       {/* Global Drag Overlay */}
       <DragOverlay />
     </View>
@@ -218,7 +249,7 @@ function PageInput({
           }
         ]}
         multiline
-        scrollEnabled={false}
+        scrollEnabled={true}
         placeholder={isEditing ? "Write your poem..." : ""}
         placeholderTextColor="#9CA3AF"
         autoCapitalize="sentences"
@@ -300,5 +331,41 @@ const styles = StyleSheet.create({
         outlineStyle: 'none',
       } as any,
     }),
+  },
+  viewModeControls: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 16,
+    zIndex: 20,
+    pointerEvents: 'box-none',
+  },
+  viewModeButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  editButton: {
+    width: 'auto',
+    paddingHorizontal: 20,
+    backgroundColor: '#3B82F6',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  editButtonText: {
+    color: '#FFF',
+    fontWeight: '600',
+    fontSize: 16,
   },
 });

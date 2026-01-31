@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, DeviceEventEmitter, Image, StyleSheet } from 'react-native';
-import { STAMPS } from '../../constants/ThemeRegistry';
+import { BOOKMARKS, STAMPS, WASHI } from '../../constants/ThemeRegistry';
 import { usePoem } from '../../context/PoemContext';
 
 export default function DragOverlay() {
@@ -23,7 +23,26 @@ export default function DragOverlay() {
 
   if (!draggedStamp) return null;
 
-  const source = STAMPS[draggedStamp.assetId as keyof typeof STAMPS];
+  let source;
+  if (draggedStamp.type === 'washi') {
+    source = WASHI[draggedStamp.assetId as keyof typeof WASHI];
+  } else if (draggedStamp.type === 'bookmark') {
+    source = BOOKMARKS[draggedStamp.assetId as keyof typeof BOOKMARKS];
+  } else {
+    source = STAMPS[draggedStamp.assetId as keyof typeof STAMPS];
+  }
+
+  // Determine size based on type (matching DraggableDecoration logic roughly)
+  let width = 100;
+  let height = 100;
+  
+  if (draggedStamp.type === 'washi') {
+    width = 220;
+    height = 74;
+  } else if (draggedStamp.type === 'bookmark') {
+    width = 160;
+    height = 600;
+  }
 
   return (
     <Animated.View
@@ -32,6 +51,10 @@ export default function DragOverlay() {
         {
           left: 0,
           top: 0,
+          width,
+          height,
+          marginTop: -height / 2,
+          marginLeft: -width / 2,
           transform: position.getTranslateTransform(),
         },
       ]}

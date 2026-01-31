@@ -6,7 +6,11 @@ import { usePoem } from '../../context/PoemContext';
 import FontToolbar from './FontToolbar';
 import StationeryToolbar from './StationeryToolbar';
 
-export default function BottomToolbar() {
+interface BottomToolbarProps {
+  onOpenDrawer: () => void;
+}
+
+export default function BottomToolbar({ onOpenDrawer }: BottomToolbarProps) {
   const { isEditing } = usePoem();
   const insets = useSafeAreaInsets();
   const [activeToolbar, setActiveToolbar] = useState<'none' | 'font' | 'stationery'>('none');
@@ -24,7 +28,7 @@ export default function BottomToolbar() {
           <ToolbarButton 
             icon={<FolderOpen size={18} color="#4B5563" />} 
             label="Drawer" 
-            onPress={() => console.log('Drawer')} 
+            onPress={onOpenDrawer} 
           />
           <ToolbarButton 
             icon={<Palette size={18} color={activeToolbar === 'stationery' ? "#3B82F6" : "#4B5563"} />} 

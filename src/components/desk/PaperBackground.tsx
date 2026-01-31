@@ -1,66 +1,78 @@
 import React, { useState } from 'react';
-import { Image, Platform, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
-import { BOOKMARKS, PAPERS, WASHI } from '../../constants/ThemeRegistry';
+import { Image, LayoutChangeEvent, Platform, StyleSheet, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
+import { PAPERS } from '../../constants/ThemeRegistry';
 import { usePoem } from '../../context/PoemContext';
-import DraggableStamp from './DraggableStamp';
+import DraggableDecoration from './DraggableDecoration';
 
 interface PaperBackgroundProps {
   children: React.ReactNode;
 }
 
 export default function PaperBackground({ children }: PaperBackgroundProps) {
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { 
     activeConfig, 
-    fixedDecorations, 
     stamps, 
-    updateStamp, 
-    removeStamp, 
+    washiTapes,
+    bookmarks,
+    updateDecoration, 
+    removeDecoration, 
     isEditing,
-    selectedStampId,
-    setSelectedStampId,
+    selectedDecorationId,
+    setSelectedDecorationId,
     setPaperBounds
   } = usePoem();
   const [paperLayout, setPaperLayout] = useState({ width: 0, height: 0 });
   const containerRef = React.useRef<View>(null);
   
-  const handleLayout = () => {
-    containerRef.current?.measure((x, y, width, height, pageX, pageY) => {
-      setPaperBounds({ x: pageX, y: pageY, width, height });
-      setPaperLayout({ width, height });
+  // A4 Ratio Logic
+  const A4_RATIO = 0.707; // Width / Height
+  // Reduce height ratio in edit mode to fit between top/bottom bars without scrolling
+  const MAX_HEIGHT_RATIO = isEditing ? 0.65 : 0.82; 
+  const MAX_WIDTH_RATIO = 0.90; // Max 90% of screen width
+
+  const maxAllowedHeight = windowHeight * MAX_HEIGHT_RATIO;
+  const maxAllowedWidth = windowWidth * MAX_WIDTH_RATIO;
+
+  let paperHeight = maxAllowedHeight;
+  let paperWidth = paperHeight * A4_RATIO;
+
+  // If calculated width is too wide, constrain width and recalculate height
+  if (paperWidth > maxAllowedWidth) {
+    paperWidth = maxAllowedWidth;
+    paperHeight = paperWidth / A4_RATIO;
+  }
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    setPaperLayout({ width, height });
+    
+    containerRef.current?.measure((x, y, w, h, pageX, pageY) => {
+      setPaperBounds({ x: pageX, y: pageY, width: w || width, height: h || height });
     });
   };
 
-  const minHeight = paperLayout.width ? paperLayout.width / 0.7 : 400;
-
   // Fallback to classic if id not found
   const paperSource = PAPERS[activeConfig.paperId as keyof typeof PAPERS] || PAPERS.paper_classic;
-  
-  // Resolve decoration sources
-  const washiSource = fixedDecorations.washiId ? WASHI[fixedDecorations.washiId as keyof typeof WASHI] : null;
-  const bookmarkSource = fixedDecorations.bookmarkId ? BOOKMARKS[fixedDecorations.bookmarkId as keyof typeof BOOKMARKS] : null;
-
-  // Dynamic Styles for Positioning
-  const washiStyle = {
-    top: fixedDecorations.washiPosition === 'top' ? -20 : undefined,
-    bottom: fixedDecorations.washiPosition === 'bottom' ? -20 : undefined,
-  };
-
-  const bookmarkStyle = {
-    right: fixedDecorations.bookmarkSide === 'right' ? -40 : undefined,
-    left: fixedDecorations.bookmarkSide === 'left' ? -40 : undefined,
-    transform: fixedDecorations.bookmarkSide === 'left' ? [{ scaleX: -1 }] : undefined, // Mirror for left side
-  };
 
   return (
-    <TouchableWithoutFeedback onPress={() => setSelectedStampId(null)}>
+    <TouchableWithoutFeedback onPress={() => setSelectedDecorationId(null)}>
       <View style={styles.container}>
-        {/* Stack Effect: A second sheet behind the main one */}
-        <View style={[styles.stackLayer, { transform: [{ rotate: '-1.5deg' }], height: paperLayout.height || minHeight }]} />
-        <View style={[styles.stackLayer, { transform: [{ rotate: '1deg' }], height: paperLayout.height || minHeight }]} />
+        <View style={[styles.stackLayer, { width: paperWidth, height: paperHeight, transform: [{ rotate: '-1.5deg' }] }]} />
+        <View style={[styles.stackLayer, { width: paperWidth, height: paperHeight, transform: [{ rotate: '1deg' }] }]} />
 
         <View 
           ref={containerRef}
-          style={[styles.shadowContainer, { minHeight }]}
+          style={[
+            styles.shadowContainer,
+            { 
+              width: paperWidth,
+              height: paperHeight,
+              maxHeight: undefined, // Override default styles
+              maxWidth: undefined,
+              aspectRatio: undefined // We handle ratio manually
+            }
+          ]}
           onLayout={handleLayout}
         >
           <Image
@@ -72,39 +84,52 @@ export default function PaperBackground({ children }: PaperBackgroundProps) {
             {children}
           </View>
 
-          {/* Decorations Layer - Renders on top of paper content */}
-          {washiSource && (
-            <View style={[styles.washiContainer, washiStyle]} pointerEvents="none">
-              <Image 
-                source={washiSource} 
-                style={styles.washiImage} 
-                resizeMode="contain" 
-              />
-            </View>
-          )}
-          
-          {bookmarkSource && (
-            <View style={[styles.bookmarkContainer, bookmarkStyle]} pointerEvents="none">
-              <Image 
-                source={bookmarkSource} 
-                style={styles.bookmarkImage} 
-                resizeMode="contain" 
-              />
-            </View>
-          )}
-
-          {/* Stamps Layer - Renders last to be on top */}
+          {/* Layer 1: Clipped Decorations (Stamps, Washi) */}
           <View style={[StyleSheet.absoluteFill, { overflow: 'hidden', borderRadius: 2 }]} pointerEvents="box-none">
-            {stamps.map((stamp) => (
-              <DraggableStamp
-                key={stamp.id}
-                stamp={stamp}
+            {/* Washi Tapes */}
+            {washiTapes.map((decoration) => (
+              <DraggableDecoration
+                key={decoration.id}
+                decoration={decoration}
                 containerWidth={paperLayout.width || 100} 
                 containerHeight={paperLayout.height || 100}
-                onUpdate={updateStamp}
-                onRemove={removeStamp}
-                onSelect={setSelectedStampId}
-                isSelected={selectedStampId === stamp.id}
+                onUpdate={updateDecoration}
+                onRemove={removeDecoration}
+                onSelect={setSelectedDecorationId}
+                isSelected={selectedDecorationId === decoration.id}
+                isEditing={isEditing}
+              />
+            ))}
+            
+            {/* Stamps */}
+            {stamps.map((decoration) => (
+              <DraggableDecoration
+                key={decoration.id}
+                decoration={decoration}
+                containerWidth={paperLayout.width || 100} 
+                containerHeight={paperLayout.height || 100}
+                onUpdate={updateDecoration}
+                onRemove={removeDecoration}
+                onSelect={setSelectedDecorationId}
+                isSelected={selectedDecorationId === decoration.id}
+                isEditing={isEditing}
+              />
+            ))}
+          </View>
+
+          {/* Layer 2: Unclipped Decorations (Bookmarks) */}
+          <View style={[StyleSheet.absoluteFill, { overflow: 'visible', borderRadius: 2 }]} pointerEvents="box-none">
+            {/* Bookmarks */}
+            {bookmarks.map((decoration) => (
+              <DraggableDecoration
+                key={decoration.id}
+                decoration={decoration}
+                containerWidth={paperLayout.width || 100} 
+                containerHeight={paperLayout.height || 100}
+                onUpdate={updateDecoration}
+                onRemove={removeDecoration}
+                onSelect={setSelectedDecorationId}
+                isSelected={selectedDecorationId === decoration.id}
                 isEditing={isEditing}
               />
             ))}
@@ -126,7 +151,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '90%',
     maxWidth: 800,
-    // aspectRatio removed to allow growth
+    aspectRatio: 0.7,
+    maxHeight: '100%',
     backgroundColor: '#FBFBFB',
     borderRadius: 2,
     borderWidth: 1,
@@ -135,7 +161,8 @@ const styles = StyleSheet.create({
   shadowContainer: {
     width: '90%',
     maxWidth: 800, // Limit width on large screens
-    // aspectRatio removed to allow growth
+    aspectRatio: 0.7,
+    maxHeight: '100%',
     backgroundColor: 'white', // Fallback color
     borderRadius: 2, // Sharpish corners for paper
     borderWidth: 1,
@@ -169,34 +196,4 @@ const styles = StyleSheet.create({
     overflow: 'hidden', // Ensure content doesn't bleed
     borderRadius: 2,
   },
-  washiContainer: {
-    position: 'absolute',
-    alignSelf: 'center',
-    width: 180, // Bigger (was 130)
-    height: 60, // Bigger (was 45)
-    zIndex: 20,
-    ...Platform.select({
-      web: { filter: 'drop-shadow(0px 2px 2px rgba(0,0,0,0.1))' }
-    })
-  },
-  washiImage: {
-    width: '100%',
-    height: '100%',
-  },
-  bookmarkContainer: {
-    position: 'absolute',
-    top: -40, // Higher up to balance length
-    width: '40%', // Even Bigger
-    height: '110%', // Longer than page
-    zIndex: 15,
-    ...Platform.select({
-      web: { filter: 'drop-shadow(4px 4px 8px rgba(0,0,0,0.2))' }
-    })
-  },
-  bookmarkImage: {
-    width: '100%',
-    height: '100%',
-  },
 });
-
-

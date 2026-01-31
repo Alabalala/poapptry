@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { Check, Image as ImageIcon, Sparkles, Stamp as StampIcon, X } from 'lucide-react-native';
+import { Check, Image as ImageIcon, Sparkles, Stamp as StampIcon } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
 import { DeviceEventEmitter, Image, PanResponder, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,7 +9,7 @@ import { usePoem } from '../../context/PoemContext';
 type Tab = 'paper' | 'decor' | 'stamps';
 
 export default function StationeryToolbar({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const { activeConfig, updateConfig, fixedDecorations, updateFixedDecorations, addStamp, setDraggedStamp, paperBounds } = usePoem();
+  const { activeConfig, updateConfig, addStamp, addWashi, addBookmark, stamps, washiTapes, bookmarks } = usePoem();
   const [activeTab, setActiveTab] = useState<Tab>('paper');
   const insets = useSafeAreaInsets();
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
@@ -43,113 +43,62 @@ export default function StationeryToolbar({ visible, onClose }: { visible: boole
     </View>
   );
 
-  const renderDecorTab = () => (
-    <View>
-      <View style={styles.sectionHeader}>
-        <SectionLabel label="Washi Tape" />
-        <View style={styles.toggleContainer}>
-          <TouchableOpacity 
-            style={[styles.toggleButton, fixedDecorations.washiPosition === 'top' && styles.toggleButtonActive]}
-            onPress={() => updateFixedDecorations({ washiPosition: 'top' })}
-          >
-            <Text style={[styles.toggleText, fixedDecorations.washiPosition === 'top' && styles.toggleTextActive]}>Top</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.toggleButton, fixedDecorations.washiPosition === 'bottom' && styles.toggleButtonActive]}
-            onPress={() => updateFixedDecorations({ washiPosition: 'bottom' })}
-          >
-            <Text style={[styles.toggleText, fixedDecorations.washiPosition === 'bottom' && styles.toggleTextActive]}>Bottom</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-      <View style={styles.grid}>
-        <TouchableOpacity
-          style={[styles.decorOption, !fixedDecorations.washiId && styles.activeOption]}
-          onPress={() => updateFixedDecorations({ washiId: null })}
-        >
-          <View style={[styles.decorPreview, styles.nonePreview]}>
-            <X size={24} color="#9CA3AF" />
-          </View>
-          <Text style={styles.optionLabel}>None</Text>
-        </TouchableOpacity>
-        {Object.entries(WASHI).map(([id, source]) => (
-          <TouchableOpacity
-            key={id}
-            style={[styles.decorOption, fixedDecorations.washiId === id && styles.activeOption]}
-            onPress={() => updateFixedDecorations({ washiId: id })}
-          >
-            <Image source={source} style={styles.decorPreview} resizeMode="cover" />
-            {fixedDecorations.washiId === id && (
-              <View style={styles.checkOverlay}>
-                <Check size={20} color="#FFF" />
-              </View>
-            )}
-            <Text style={styles.optionLabel}>{id.replace('washi_', '').replace('_', ' ')}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+  const handleAddDecoration = (id: string, type: 'stamp' | 'washi' | 'bookmark') => {
+    let success = false;
+    if (type === 'washi') success = addWashi(id);
+    else if (type === 'bookmark') success = addBookmark(id);
+    else success = addStamp(id);
 
-      <View style={styles.sectionHeader}>
-        <SectionLabel label="Bookmarks" />
-        <View style={styles.toggleContainer}>
-          <TouchableOpacity 
-            style={[styles.toggleButton, fixedDecorations.bookmarkSide === 'left' && styles.toggleButtonActive]}
-            onPress={() => updateFixedDecorations({ bookmarkSide: 'left' })}
-          >
-            <Text style={[styles.toggleText, fixedDecorations.bookmarkSide === 'left' && styles.toggleTextActive]}>Left</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.toggleButton, fixedDecorations.bookmarkSide === 'right' && styles.toggleButtonActive]}
-            onPress={() => updateFixedDecorations({ bookmarkSide: 'right' })}
-          >
-            <Text style={[styles.toggleText, fixedDecorations.bookmarkSide === 'right' && styles.toggleTextActive]}>Right</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-      <View style={styles.grid}>
-        <TouchableOpacity
-          style={[styles.decorOption, !fixedDecorations.bookmarkId && styles.activeOption]}
-          onPress={() => updateFixedDecorations({ bookmarkId: null })}
-        >
-          <View style={[styles.decorPreview, styles.nonePreview]}>
-            <X size={24} color="#9CA3AF" />
-          </View>
-          <Text style={styles.optionLabel}>None</Text>
-        </TouchableOpacity>
-        {Object.entries(BOOKMARKS).map(([id, source]) => (
-          <TouchableOpacity
-            key={id}
-            style={[styles.decorOption, fixedDecorations.bookmarkId === id && styles.activeOption]}
-            onPress={() => updateFixedDecorations({ bookmarkId: id })}
-          >
-            <Image source={source} style={styles.decorPreview} resizeMode="cover" />
-            {fixedDecorations.bookmarkId === id && (
-              <View style={styles.checkOverlay}>
-                <Check size={20} color="#FFF" />
-              </View>
-            )}
-            <Text style={styles.optionLabel}>{id.replace('bookmark_', '').replace('_', ' ')}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
-
-  const handleAddStamp = (id: string) => {
-    const success = addStamp(id);
     if (success) {
       onClose();
     }
   };
 
+  const renderDecorTab = () => (
+    <View>
+      <View style={styles.sectionHeader}>
+        <SectionLabel label="Washi Tape" />
+      </View>
+      <View style={styles.grid}>
+        {Object.entries(WASHI).map(([id, source]) => (
+          <DraggableOption
+            key={id}
+            id={id}
+            source={source}
+            type="washi"
+            onPress={() => handleAddDecoration(id, 'washi')}
+            onClose={onClose}
+          />
+        ))}
+      </View>
+
+      <View style={styles.sectionHeader}>
+        <SectionLabel label="Bookmarks" />
+      </View>
+      <View style={styles.bookmarkGrid}>
+        {Object.entries(BOOKMARKS).map(([id, source]) => (
+          <DraggableOption
+            key={id}
+            id={id}
+            source={source}
+            type="bookmark"
+            onPress={() => handleAddDecoration(id, 'bookmark')}
+            onClose={onClose}
+          />
+        ))}
+      </View>
+    </View>
+  );
+
   const renderStampsTab = () => (
     <View style={styles.grid}>
       {Object.entries(STAMPS).map(([id, source]) => (
-        <DraggableStampOption
+        <DraggableOption
           key={id}
           id={id}
           source={source}
-          onPress={() => handleAddStamp(id)}
+          type="stamp"
+          onPress={() => handleAddDecoration(id, 'stamp')}
           onClose={onClose}
         />
       ))}
@@ -182,7 +131,12 @@ export default function StationeryToolbar({ visible, onClose }: { visible: boole
             <Text style={[styles.tabText, activeTab === 'stamps' && styles.activeTabText]}>Stamps</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+
+        <TouchableOpacity 
+          onPress={onClose} 
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={styles.headerButton}
+        >
           <Text style={styles.closeButton}>Done</Text>
         </TouchableOpacity>
       </View>
@@ -217,8 +171,8 @@ function SectionLabel({ label }: { label: string }) {
   return <Text style={styles.sectionLabel}>{label}</Text>;
 }
 
-function DraggableStampOption({ id, source, onPress, onClose }: { id: string, source: any, onPress: () => void, onClose: () => void }) {
-  const { addStamp, setDraggedStamp, paperBounds } = usePoem();
+function DraggableOption({ id, source, type, onPress, onClose }: { id: string, source: any, type: 'stamp' | 'washi' | 'bookmark', onPress: () => void, onClose: () => void }) {
+  const { addStamp, addWashi, addBookmark, setDraggedStamp, getPaperBounds } = usePoem();
   const isDraggingRef = useRef(false);
   
   const panResponder = useRef(
@@ -242,7 +196,7 @@ function DraggableStampOption({ id, source, onPress, onClose }: { id: string, so
            DeviceEventEmitter.emit('DRAG_MOVE', { x: gestureState.moveX, y: gestureState.moveY });
            
            if (!isDraggingRef.current) {
-             setDraggedStamp({ assetId: id, x: gestureState.moveX, y: gestureState.moveY });
+             setDraggedStamp({ assetId: id, x: gestureState.moveX, y: gestureState.moveY, type });
              isDraggingRef.current = true;
            }
         }
@@ -252,8 +206,9 @@ function DraggableStampOption({ id, source, onPress, onClose }: { id: string, so
         isDraggingRef.current = false;
         
         // Check if dropped on paper
-        if (paperBounds) {
-          const { x, y, width, height } = paperBounds;
+        const currentPaperBounds = getPaperBounds();
+        if (currentPaperBounds) {
+          const { x, y, width, height } = currentPaperBounds;
           const dropX = gestureState.moveX;
           const dropY = gestureState.moveY;
           
@@ -267,7 +222,11 @@ function DraggableStampOption({ id, source, onPress, onClose }: { id: string, so
             const relX = ((dropX - x) / width) * 100;
             const relY = ((dropY - y) / height) * 100;
             
-            const success = addStamp(id, { x: relX, y: relY });
+            let success = false;
+            if (type === 'washi') success = addWashi(id, { x: relX, y: relY });
+            else if (type === 'bookmark') success = addBookmark(id, { x: relX, y: relY });
+            else success = addStamp(id, { x: relX, y: relY });
+
             if (success) {
               onClose(); // Close menu on successful drop
             }
@@ -283,13 +242,11 @@ function DraggableStampOption({ id, source, onPress, onClose }: { id: string, so
   return (
     <View 
       {...panResponder.panHandlers}
-      style={styles.stampOption}
+      style={type === 'washi' ? styles.washiOption : type === 'bookmark' ? styles.bookmarkOption : styles.stampOption}
     >
       <TouchableOpacity
         style={{ flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center' }}
         onPress={onPress}
-        // Important: activeOpacity needs to be handled carefully with PanResponder
-        // But since we use onMoveShouldSetPanResponder, touchable handles taps first.
       >
         <Image source={source} style={styles.stampPreview} resizeMode="contain" />
       </TouchableOpacity>
@@ -330,6 +287,12 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
+  },
+  headerButton: {
+    minWidth: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabs: {
     flexDirection: 'row',
@@ -376,6 +339,12 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 16,
   },
+  bookmarkGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'center',
+  },
   sectionLabel: {
     fontSize: 12,
     fontWeight: '600',
@@ -390,34 +359,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: 8,
     paddingRight: 4,
-  },
-  toggleContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-    padding: 2,
-  },
-  toggleButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  toggleButtonActive: {
-    backgroundColor: 'white',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 1,
-    elevation: 1,
-  },
-  toggleText: {
-    fontSize: 10,
-    fontWeight: '500',
-    color: '#6B7280',
-  },
-  toggleTextActive: {
-    color: '#111827',
-    fontWeight: '600',
   },
   paperOption: {
     width: '47%',
@@ -448,6 +389,30 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     padding: 8,
   },
+  washiOption: {
+    width: '47%',
+    aspectRatio: 2.5,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 16,
+    padding: 4,
+  },
+  bookmarkOption: {
+    width: '23%',
+    aspectRatio: 0.4,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 8,
+    padding: 4,
+  },
   activeOption: {
     borderWidth: 2,
     borderColor: '#3B82F6',
@@ -471,11 +436,12 @@ const styles = StyleSheet.create({
   },
   checkOverlay: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(59, 130, 246, 0.3)',
+    top: 5,
+    right: 5,
+    backgroundColor: '#111827',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,14 +1,16 @@
 import { useRouter } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
-import React from 'react';
-import { Platform, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ChevronLeft, MoreVertical, UserPlus } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePoem } from '../../context/PoemContext';
+import PoemActionsMenu from './PoemActionsMenu';
 
-export default function TopBar() {
-  const { title, setTitle, isEditing } = usePoem();
+export default function TopBar({ onBack }: { onBack?: () => void }) {
+  const { title, setTitle, isEditing, isGuest } = usePoem();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const [menuVisible, setMenuVisible] = useState(false);
 
   if (!isEditing) return null;
 
@@ -16,7 +18,7 @@ export default function TopBar() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.barContent}>
         <TouchableOpacity 
-          onPress={() => router.back()} 
+          onPress={onBack || (() => router.back())} 
           style={styles.backButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
@@ -31,8 +33,31 @@ export default function TopBar() {
           placeholderTextColor="#9CA3AF"
         />
         
-        <View style={styles.placeholder} />
+        <View style={styles.rightActions}>
+          {isGuest && (
+            <TouchableOpacity 
+              style={styles.signupButton}
+              onPress={() => router.push('/auth')}
+            >
+              <UserPlus size={20} color="#3B82F6" />
+              <Text style={styles.signupText}>Save</Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity 
+            style={styles.menuButton}
+            onPress={() => setMenuVisible(true)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <MoreVertical size={24} color="#374151" />
+          </TouchableOpacity>
+        </View>
       </View>
+
+      <PoemActionsMenu 
+        visible={menuVisible} 
+        onClose={() => setMenuVisible(false)} 
+      />
     </View>
   );
 }
@@ -58,6 +83,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 20,
     backgroundColor: 'rgba(0,0,0,0.03)',
+    flexShrink: 0, // Prevent shrinking
   },
   titleInput: {
     flex: 1,
@@ -65,14 +91,42 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#1F2937',
-    marginHorizontal: 16,
+    marginHorizontal: 8, // Reduced margin to give more space to button
+    minWidth: 0, // Allow shrinking below content size
     ...Platform.select({
       web: {
         outlineStyle: 'none',
       } as any,
     }),
   },
-  placeholder: {
-    width: 40,
+  rightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    minWidth: 40, // Ensure space is reserved
+    justifyContent: 'flex-end',
+  },
+  signupButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF', // Light blue bg
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+    flexShrink: 0, // Ensure button doesn't shrink or get pushed out
+  },
+  signupText: {
+    color: '#3B82F6',
+    fontWeight: '600',
+    fontSize: 14,
+    marginLeft: 6,
+  },
+  menuButton: {
+    width: 32,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

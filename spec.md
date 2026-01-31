@@ -39,24 +39,22 @@
       `isUnderline`: boolean
     }
 
-  // Fixed Decorations
-  - `decorations`: {
-      `washiId`: string | null, 
-      `washiPosition`: 'top' | 'bottom',
-      `bookmarkId`: string | null,
-      `bookmarkSide`: 'left' | 'right'
-    }
+  // Free-floating Decorations (All interactive: Drag, Select, Delete)
+  - `stamps`: Array<Decoration> (Max 3)
+  - `washiTapes`: Array<Decoration> (Max 3)
+  - `bookmarks`: Array<Decoration> (Max 1)
 
-  // Free-floating Decorations
-  - `stamps`: Array<{ 
+  // Decoration Interface
+  interface Decoration { 
       `id`: string,       // Unique Instance ID
-      `assetId`: string,  // e.g. 'stamp_1'
-      `x`: number,        // Percentage (0-100) or Absolute
-      `y`: number,        // Percentage (0-100) or Absolute
+      `assetId`: string,  // e.g. 'stamp_1', 'washi_1', 'bookmark_1'
+      `type`: 'stamp' | 'washi' | 'bookmark',
+      `x`: number,        // Percentage (0-100)
+      `y`: number,        // Percentage (0-100)
       `rotation`: number, // Degrees
       `scale`: number,    // 0.5 to 2.0
       `opacity`: number   // 0.3 to 1.0
-    }>
+    }
 
 ## 4. User Flow (The "Desk" Concept)
 

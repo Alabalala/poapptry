@@ -56,3 +56,12 @@ export const STAMPS: Record<string, ImageSourcePropType> = {
   stamp_10: require('../../assets/stamps/stamp-10.png'),
   stamp_11: require('../../assets/stamps/stamp-11.png'),
 };
+
+export const FONT_CAPABILITIES: Record<string, { supportsBold: boolean; supportsItalic: boolean }> = {
+  'Crimson Text': { supportsBold: true, supportsItalic: true },
+  'Playfair Display': { supportsBold: true, supportsItalic: false },
+  'Courier Prime': { supportsBold: true, supportsItalic: true },
+  'PressStart2P': { supportsBold: false, supportsItalic: false },
+  'VT323': { supportsBold: false, supportsItalic: false },
+  'Caveat': { supportsBold: true, supportsItalic: false },
+};
