@@ -51,6 +51,7 @@ export interface TextBox {
   style: {
     fontFamily: string;
     fontSize: number;
+    lineHeight?: number;
     textAlign: 'left' | 'center' | 'right';
     color: string;
     fontWeight?: 'normal' | 'bold';
@@ -416,15 +417,16 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
         const newTextBox: TextBox = {
           id: newId,
           content: initialContent,
-          x: 40, // Increased padding to be more visible
-          y: 40,
-          width: 200, // Smaller initial width for "Type here" feel
-          height: 50, // Initial height, will grow
+          x: 10, // 10%
+          y: 10, // 10%
+          width: 60, // 60%
+          height: 8, // Approx 8%
           rotation: 0,
           zIndex: page.textBoxes.length + 1,
           style: {
             fontFamily: activeConfig.fontId,
             fontSize: activeConfig.fontSize === 'small' ? 16 : activeConfig.fontSize === 'medium' ? 18 : 22,
+            lineHeight: (activeConfig.fontSize === 'small' ? 16 : activeConfig.fontSize === 'medium' ? 18 : 22) * activeConfig.lineSpacing,
             textAlign: activeConfig.textAlign,
             color: activeConfig.inkColor,
             fontWeight: activeConfig.isBold ? 'bold' : 'normal',
@@ -465,8 +467,8 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
       const newTextBox: TextBox = {
         ...originalBox,
         id: newId,
-        x: originalBox.x + 20,
-        y: originalBox.y + 20,
+        x: originalBox.x + 5, // 5% offset
+        y: originalBox.y + 5, // 5% offset
         zIndex: page.textBoxes.length + 1,
       };
 

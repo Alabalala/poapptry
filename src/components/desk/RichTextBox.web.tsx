@@ -8,13 +8,14 @@ interface RichTextBoxProps {
   onFocus: () => void;
   isEditing: boolean;
   shouldFocus?: boolean;
+  scale?: number;
 }
 
 export interface RichTextBoxRef {
   focus: () => void;
 }
 
-const RichTextBox = forwardRef<RichTextBoxRef, RichTextBoxProps>(({ textBox, onUpdate, onFocus, isEditing, shouldFocus }, ref) => {
+const RichTextBox = forwardRef<RichTextBoxRef, RichTextBoxProps>(({ textBox, onUpdate, onFocus, isEditing, shouldFocus, scale = 1 }, ref) => {
   const divRef = useRef<HTMLDivElement>(null);
   const isInternalUpdate = useRef(false);
 
@@ -63,7 +64,8 @@ const RichTextBox = forwardRef<RichTextBoxRef, RichTextBoxProps>(({ textBox, onU
           overflow: 'auto',
           padding: '8px',
           fontFamily: textBox.style.fontFamily,
-          fontSize: `${textBox.style.fontSize}px`,
+          fontSize: `${textBox.style.fontSize * scale}px`,
+          lineHeight: textBox.style.lineHeight ? `${textBox.style.lineHeight * scale}px` : undefined,
           textAlign: textBox.style.textAlign,
           color: textBox.style.color,
           fontWeight: textBox.style.fontWeight,
@@ -87,7 +89,8 @@ const RichTextBox = forwardRef<RichTextBoxRef, RichTextBoxProps>(({ textBox, onU
             color: 'rgba(156, 163, 175, 0.6)', // Gray-400 with opacity
             pointerEvents: 'none', // Allow clicking through to the editor
             fontFamily: textBox.style.fontFamily,
-            fontSize: `${textBox.style.fontSize}px`,
+            fontSize: `${textBox.style.fontSize * scale}px`,
+            lineHeight: textBox.style.lineHeight ? `${textBox.style.lineHeight * scale}px` : undefined,
             textAlign: textBox.style.textAlign,
             fontStyle: 'italic',
           }}
@@ -105,6 +108,7 @@ RichTextBox.displayName = 'RichTextBox';
 export default memo(RichTextBox, (prev, next) => {
   return (
     prev.isEditing === next.isEditing &&
+    prev.scale === next.scale &&
     prev.textBox.content === next.textBox.content &&
     prev.textBox.style.fontFamily === next.textBox.style.fontFamily &&
     prev.textBox.style.fontSize === next.textBox.style.fontSize &&

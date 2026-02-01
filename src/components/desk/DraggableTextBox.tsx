@@ -17,6 +17,9 @@ interface DraggableTextBoxProps {
   paperSize: { width: number; height: number };
 }
 
+// Helper to convert pixels to percentages and back
+const REFERENCE_WIDTH = 375; // Standard mobile width for relative font scaling
+
 export default function DraggableTextBox({
   textBox,
   isSelected,
@@ -29,13 +32,35 @@ export default function DraggableTextBox({
   isEditing,
   paperSize,
 }: DraggableTextBoxProps) {
-  // Local layout state for smooth interactions
-  const [localLayout, setLocalLayout] = useState({
-    x: textBox.x,
-    y: textBox.y,
-    width: textBox.width,
-    height: textBox.height,
-  });
+  // Determine if stored values are percentages (legacy support)
+  // Heuristic: If x is small (< 100) and width is reasonable for %, it's likely %, 
+  // but if width > 100 (e.g. 200px), it's definitely pixels.
+  // We'll migrate on the fly by calculating pixel values here.
+  
+  const isPercentage = textBox.x <= 100 && textBox.width <= 100 && textBox.y <= 100;
+  
+  const getPixelValues = () => {
+    if (isPercentage) {
+      return {
+        x: (textBox.x / 100) * paperSize.width,
+        y: (textBox.y / 100) * paperSize.height,
+        width: (textBox.width / 100) * paperSize.width,
+        height: (textBox.height / 100) * paperSize.height,
+      };
+    }
+    return {
+      x: textBox.x,
+      y: textBox.y,
+      width: textBox.width,
+      height: textBox.height,
+    };
+  };
+
+  const pixelValues = getPixelValues();
+  const fontScale = paperSize.width / REFERENCE_WIDTH;
+
+  // Local layout state for smooth interactions (in pixels)
+  const [localLayout, setLocalLayout] = useState(pixelValues);
 
   // Typing state: If true, user is editing text. If false, user is moving box.
   const [isTyping, setIsTyping] = useState(false);
@@ -46,13 +71,20 @@ export default function DraggableTextBox({
 
   // Sync with prop updates when not interacting
   useEffect(() => {
-    setLocalLayout({
-      x: textBox.x,
-      y: textBox.y,
-      width: textBox.width,
-      height: textBox.height,
+    const newPixels = getPixelValues();
+    setLocalLayout(newPixels);
+  }, [textBox.x, textBox.y, textBox.width, textBox.height, paperSize.width, paperSize.height]);
+
+  // Helper to save as percentages
+  const updateAsPercentage = (layout: { x: number; y: number; width: number; height: number }) => {
+    onUpdate({
+      x: (layout.x / paperSize.width) * 100,
+      y: (layout.y / paperSize.height) * 100,
+      width: (layout.width / paperSize.width) * 100,
+      height: (layout.height / paperSize.height) * 100,
     });
-  }, [textBox.x, textBox.y, textBox.width, textBox.height]);
+  };
+
 
   // Reset typing state when selection is lost
   useEffect(() => {
@@ -137,7 +169,12 @@ export default function DraggableTextBox({
           if (isFullyOutside) {
             onRemove();
           } else {
-            onUpdate({ x: newX, y: newY });
+            updateAsPercentage({
+              x: newX,
+              y: newY,
+              width: initialGesture.current.width,
+              height: initialGesture.current.height
+            });
           }
         }
       },
@@ -198,7 +235,7 @@ export default function DraggableTextBox({
         });
       },
       onPanResponderRelease: () => {
-        onUpdate({
+        updateAsPercentage({
           x: currentLayoutRef.current.x,
           y: currentLayoutRef.current.y,
           width: currentLayoutRef.current.width,
@@ -221,10 +258,10 @@ export default function DraggableTextBox({
       <View
         style={{
           position: 'absolute',
-          left: textBox.x,
-          top: textBox.y,
-          width: textBox.width,
-          minHeight: textBox.height,
+          left: localLayout.x,
+          top: localLayout.y,
+          width: localLayout.width,
+          minHeight: localLayout.height,
           zIndex: textBox.zIndex,
         }}
       >
@@ -233,6 +270,7 @@ export default function DraggableTextBox({
           onUpdate={() => {}}
           onFocus={() => {}}
           isEditing={false}
+          scale={fontScale}
         />
       </View>
     );
@@ -313,6 +351,7 @@ export default function DraggableTextBox({
           }}
           isEditing={isEditing}
           shouldFocus={isTyping}
+          scale={fontScale}
         />
       </View>
 

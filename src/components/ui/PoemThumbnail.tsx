@@ -2,7 +2,7 @@ import { BOOKMARKS, PAPERS, STAMPS, WASHI } from '@/constants/ThemeRegistry';
 import { Decoration } from '@/context/PoemContext';
 import { PoemData } from '@/services/poemService';
 import React from 'react';
-import { Image, Platform, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 interface PoemThumbnailProps {
   poem: PoemData;
@@ -43,14 +43,17 @@ export default function PoemThumbnail({ poem, width }: PoemThumbnailProps) {
 
      if (d.type === 'washi') {
        source = WASHI[d.assetId as keyof typeof WASHI];
-       baseW = 220;
-       baseH = 74;
+       baseW = BASE_WIDTH * 0.55;
+       baseH = baseW * (74 / 220);
      } else if (d.type === 'bookmark') {
        source = BOOKMARKS[d.assetId as keyof typeof BOOKMARKS];
-       baseW = 160;
-       baseH = 600;
+       baseW = BASE_WIDTH * 0.40;
+       baseH = baseW * (600 / 160);
      } else {
+       // Stamps
        source = STAMPS[d.assetId as keyof typeof STAMPS];
+       baseW = BASE_WIDTH * 0.25;
+       baseH = baseW; // Square
      }
      
      if (!source) return null;
@@ -102,30 +105,58 @@ export default function PoemThumbnail({ poem, width }: PoemThumbnailProps) {
          <View style={[styles.paper, { width: BASE_WIDTH, height: BASE_HEIGHT }]}>
            <Image source={paperSource} style={StyleSheet.absoluteFill} resizeMode="cover" />
            
-           {/* Text Content */}
-           <View style={{ padding: 40, flex: 1 }}>
-             <Text 
-               style={{
-                 fontFamily: activeConfig.fontId,
-                 color: activeConfig.inkColor,
-                 fontSize: activeConfig.fontSize === 'small' ? 16 : activeConfig.fontSize === 'medium' ? 18 : 22,
-                 textAlign: activeConfig.textAlign,
-                 lineHeight: (activeConfig.fontSize === 'small' ? 16 : activeConfig.fontSize === 'medium' ? 18 : 22) * activeConfig.lineSpacing,
-                 fontWeight: activeConfig.isBold ? 'bold' : 'normal',
-                 fontStyle: activeConfig.isItalic ? 'italic' : 'normal',
-                 textDecorationLine: activeConfig.isUnderline ? 'underline' : 'none',
-                 ...Platform.select({
-                    web: { whiteSpace: 'pre-wrap' } as any
-                 })
-               }}
-               numberOfLines={12} // Limit lines for thumbnail
-             >
-               {content}
-             </Text>
+           {/* Text Boxes (Rendered exactly as in editor) */}
+           <View style={[StyleSheet.absoluteFill, { zIndex: 10 }]}>
+             {pages[0]?.textBoxes?.map((box) => {
+               // Handle legacy pixels vs new percentages
+               // If box.x > 100, it's pixels. We map pixels/375 to %.
+               // If box.x <= 100, it's %.
+               // However, current editor width might differ from 375.
+               // Assuming saved data is consistent with our new logic (percentages).
+               
+               let left = (box.x / 100) * BASE_WIDTH;
+               let top = (box.y / 100) * BASE_HEIGHT;
+               let boxWidth = (box.width / 100) * BASE_WIDTH;
+               
+               // Fallback for legacy pixel data (heuristic: x > 100 or width > 100)
+               if (box.x > 100 || box.width > 100) {
+                  left = box.x; // This might be off if screen size differed, but best effort
+                  top = box.y;
+                  boxWidth = box.width;
+               }
+
+               return (
+                 <View
+                   key={box.id}
+                   style={{
+                     position: 'absolute',
+                     left,
+                     top,
+                     width: boxWidth,
+                     // height: 'auto', // Let text expand
+                   }}
+                 >
+                   <Text
+                     style={{
+                       fontFamily: box.style.fontFamily,
+                        fontSize: box.style.fontSize, // 16px here will be scaled by parent transform
+                        lineHeight: box.style.lineHeight, // Should also be scaled by parent transform
+                        textAlign: box.style.textAlign,
+                       color: box.style.color,
+                       fontWeight: box.style.fontWeight,
+                       fontStyle: box.style.fontStyle,
+                       textDecorationLine: box.style.textDecorationLine,
+                     }}
+                   >
+                     {stripHtml(box.content)}
+                   </Text>
+                 </View>
+               );
+             })}
            </View>
 
            {/* Decorations */}
-           <View style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]}>
+           <View style={[StyleSheet.absoluteFill, { overflow: 'hidden', zIndex: 5 }]}>
              {washiTapes.map(renderDecoration)}
              {stamps.map(renderDecoration)}
              {bookmarks.map(renderDecoration)}

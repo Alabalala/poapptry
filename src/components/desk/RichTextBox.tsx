@@ -8,13 +8,14 @@ interface RichTextBoxProps {
   onFocus: () => void;
   isEditing: boolean;
   shouldFocus?: boolean;
+  scale?: number;
 }
 
 export interface RichTextBoxRef {
   focus: () => void;
 }
 
-const RichTextBox = forwardRef<RichTextBoxRef, RichTextBoxProps>(({ textBox, onUpdate, onFocus, isEditing, shouldFocus }, ref) => {
+const RichTextBox = forwardRef<RichTextBoxRef, RichTextBoxProps>(({ textBox, onUpdate, onFocus, isEditing, shouldFocus, scale = 1 }, ref) => {
   const inputRef = useRef<TextInput>(null);
 
   useImperativeHandle(ref, () => ({
@@ -35,8 +36,9 @@ const RichTextBox = forwardRef<RichTextBoxRef, RichTextBoxProps>(({ textBox, onU
           styles.input,
           {
             fontFamily: textBox.style.fontFamily,
-            fontSize: textBox.style.fontSize,
-            textAlign: textBox.style.textAlign,
+            fontSize: textBox.style.fontSize * scale,
+              lineHeight: textBox.style.lineHeight ? textBox.style.lineHeight * scale : undefined,
+              textAlign: textBox.style.textAlign,
             color: textBox.style.color,
             fontWeight: textBox.style.fontWeight,
             fontStyle: textBox.style.fontStyle,
