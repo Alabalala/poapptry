@@ -335,6 +335,7 @@ export default function DraggableTextBox({
           <TouchableOpacity 
             onPress={() => {
               Keyboard.dismiss();
+              setIsTyping(false);
               onStyle();
             }} 
             style={styles.toolbarButton}

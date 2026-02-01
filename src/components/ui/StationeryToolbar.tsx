@@ -17,7 +17,7 @@ export default function StationeryToolbar({ visible, onClose }: { visible: boole
     <View style={styles.container}>
       <StationeryPanelContent 
         onClose={onClose}
-        scrollContentStyle={{ paddingBottom: Math.max(insets.bottom, 20) + 60 }}
+        scrollContentStyle={{ paddingBottom: 0 }}
         renderHeaderRight={() => (
           <TouchableOpacity 
             onPress={onClose} 
@@ -47,7 +47,7 @@ export function StationeryPanelContent({
   const insets = useSafeAreaInsets();
 
   // Calculate default padding if not provided
-  const paddingBottom = scrollContentStyle?.paddingBottom ?? (Math.max(insets.bottom, 20) + 60);
+  const paddingBottom = scrollContentStyle?.paddingBottom ?? (Math.max(insets.bottom, 20) + 120);
 
   const handleScroll = (event: any) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
@@ -169,8 +169,9 @@ export function StationeryPanelContent({
       </View>
 
       <ScrollView 
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={true} 
-        contentContainerStyle={[styles.scrollContent, scrollContentStyle || { paddingBottom }]}
+        contentContainerStyle={[styles.scrollContent, scrollContentStyle || { paddingBottom }, { flexGrow: 1 }]}
         indicatorStyle="black"
         onScroll={handleScroll}
         scrollEventThrottle={16}
@@ -178,6 +179,7 @@ export function StationeryPanelContent({
         {activeTab === 'paper' && renderPaperTab()}
         {activeTab === 'decor' && renderDecorTab()}
         {activeTab === 'stamps' && renderStampsTab()}
+        <View style={{ height: Math.max(insets.bottom, 20) + 120 }} />
       </ScrollView>
 
       {!isScrolledToBottom && (
@@ -290,19 +292,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: '60%',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.1,
         shadowRadius: 12,
+        height: '55%', // Fixed height for iOS scrolling stability
       },
       android: {
         elevation: 20,
+        height: '55%', // Fixed height for Android scrolling stability
       },
       web: {
         boxShadow: '0px -4px 20px rgba(0, 0, 0, 0.1)',
+        maxHeight: '60%',
       },
     }),
     zIndex: 20,

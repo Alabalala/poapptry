@@ -18,9 +18,20 @@ export interface RichTextBoxRef {
 const RichTextBox = forwardRef<RichTextBoxRef, RichTextBoxProps>(({ textBox, onUpdate, onFocus, isEditing, shouldFocus, scale = 1 }, ref) => {
   const inputRef = useRef<TextInput>(null);
 
+  React.useEffect(() => {
+    if (shouldFocus) {
+      inputRef.current?.focus();
+    } else if (shouldFocus === false) {
+      inputRef.current?.blur();
+    }
+  }, [shouldFocus]);
+
   useImperativeHandle(ref, () => ({
     focus: () => {
       inputRef.current?.focus();
+    },
+    blur: () => {
+      inputRef.current?.blur();
     }
   }));
 

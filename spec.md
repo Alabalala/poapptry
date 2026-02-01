@@ -129,5 +129,6 @@ Instead of a single full-page text area, the app now uses movable, resizable tex
     - Internal padding (8px base) and placeholder positioning also scale proportionally to ensure consistent text wrapping.
     - Thumbnails use the same scaling logic to ensure they are exact visual replicas of the editor.
 -   **Styling:** Font family, size, line-height, color, and alignment can be applied per text box.
+-   **Mobile Interaction:** Opening the Style menu automatically dismisses the keyboard (and blurs the input) to allow full view of styling options. Tapping the text box again re-opens the keyboard.
 
 ## 6. Future Considerations

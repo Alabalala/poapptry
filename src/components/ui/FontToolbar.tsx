@@ -165,8 +165,8 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
     }
   };
 
-  // Calculate default padding if not provided
-  const paddingBottom = scrollContentStyle?.paddingBottom ?? (Math.max(insets.bottom, 20) + 60);
+  // Calculate default padding if not provided - We use a spacer view now instead of paddingBottom
+  const paddingBottom = scrollContentStyle?.paddingBottom ?? 0;
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
@@ -198,8 +198,9 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
   return (
     <View style={{ flex: 1 }}>
       <ScrollView 
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={true} 
-        contentContainerStyle={[styles.scrollContent, scrollContentStyle || { paddingBottom }]}
+        contentContainerStyle={[styles.scrollContent, scrollContentStyle || { paddingBottom }, { flexGrow: 1 }]}
         indicatorStyle="black"
         onScroll={handleScroll}
         scrollEventThrottle={16}
@@ -424,19 +425,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: '60%',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.1,
         shadowRadius: 12,
+        height: '55%', // Fixed height for iOS scrolling stability
       },
       android: {
         elevation: 20,
+        height: '55%', // Fixed height for Android scrolling stability
       },
       web: {
         boxShadow: '0px -4px 20px rgba(0, 0, 0, 0.1)',
+        maxHeight: '60%',
       },
     }),
     zIndex: 20,
