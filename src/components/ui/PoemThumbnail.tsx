@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, Platform } from 'react-native';
-import { PoemData } from '@/services/poemService';
-import { PAPERS, STAMPS, WASHI, BOOKMARKS } from '@/constants/ThemeRegistry';
+import { BOOKMARKS, PAPERS, STAMPS, WASHI } from '@/constants/ThemeRegistry';
 import { Decoration } from '@/context/PoemContext';
+import { PoemData } from '@/services/poemService';
+import React from 'react';
+import { Image, Platform, StyleSheet, Text, View } from 'react-native';
 
 interface PoemThumbnailProps {
   poem: PoemData;
@@ -20,7 +20,20 @@ export default function PoemThumbnail({ poem, width }: PoemThumbnailProps) {
   const scale = width / BASE_WIDTH;
 
   const { activeConfig, pages, stamps = [], washiTapes = [], bookmarks = [] } = poem;
-  const content = pages[0]?.textBoxes?.map(t => t.content).join('\n') || '';
+
+  // Helper to strip HTML tags and preserve line breaks
+  const stripHtml = (html: string) => {
+    if (!html) return '';
+    return html
+      .replace(/<br\s*\/?>/gi, '\n') // Replace <br> with newline
+      .replace(/<\/div>/gi, '\n')    // Replace </div> with newline
+      .replace(/<\/p>/gi, '\n')      // Replace </p> with newline
+      .replace(/<[^>]+>/g, '')       // Remove remaining tags
+      .replace(/&nbsp;/g, ' ')       // Replace &nbsp; with space
+      .trim();                       // Trim whitespace
+  };
+
+  const content = pages[0]?.textBoxes?.map(t => stripHtml(t.content)).join('\n') || '';
 
   // Helper to render decorations
   const renderDecoration = (d: Decoration) => {

@@ -83,9 +83,6 @@ export default function PaperBackground({ children, availableWidth, onSizeChange
             style={[StyleSheet.absoluteFill, styles.paperImage]}
             resizeMode="cover"
           />
-          <View style={styles.content}>
-            {children}
-          </View>
 
           {/* Layer 1: Clipped Decorations (Stamps, Washi) */}
           <View style={[StyleSheet.absoluteFill, { overflow: 'hidden', borderRadius: 2 }]} pointerEvents="box-none">
@@ -118,6 +115,10 @@ export default function PaperBackground({ children, availableWidth, onSizeChange
                 isEditing={isEditing}
               />
             ))}
+          </View>
+
+          <View style={styles.content} pointerEvents="box-none">
+            {children}
           </View>
 
           {/* Layer 2: Unclipped Decorations (Bookmarks) */}

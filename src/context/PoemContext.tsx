@@ -179,10 +179,10 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
         const { style } = textBox;
         setActiveConfig(prev => ({
           ...prev,
-          fontId: style.fontFamily,
+          fontId: style.fontFamily || 'Crimson Text',
           fontSize: style.fontSize === 16 ? 'small' : style.fontSize === 22 ? 'large' : 'medium',
-          textAlign: style.textAlign,
-          inkColor: style.color,
+          textAlign: style.textAlign || 'left',
+          inkColor: style.color || '#000000',
           isBold: style.fontWeight === 'bold',
           isItalic: style.fontStyle === 'italic',
           isUnderline: style.textDecorationLine?.includes('underline') ?? false,
@@ -504,7 +504,12 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
       if (page.id !== pageId) return page;
       return {
         ...page,
-        textBoxes: page.textBoxes.map(box => box.id === textBoxId ? { ...box, ...updates } : box)
+        textBoxes: page.textBoxes.map(box => {
+          if (box.id !== textBoxId) return box;
+          // Deep merge style to prevent overwriting other style properties (like fontFamily)
+          const newStyle = updates.style ? { ...box.style, ...updates.style } : box.style;
+          return { ...box, ...updates, style: newStyle };
+        })
       };
     }));
   };

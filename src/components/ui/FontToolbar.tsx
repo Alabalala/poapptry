@@ -93,28 +93,41 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
     if (selectedTextBoxId) {
       // Special handling for Web rich text commands
       if (Platform.OS === 'web') {
+        const selection = window.getSelection();
+        // If selection is collapsed (cursor only), we treat it as "Edit Whole Box"
+        // and select all text before applying styles, then collapse back.
+        const shouldSelectAll = selection && selection.isCollapsed;
+
+        if (shouldSelectAll) {
+          document.execCommand('selectAll');
+        }
+
         if (updates.isBold !== undefined) document.execCommand('bold');
         if (updates.isItalic !== undefined) document.execCommand('italic');
         if (updates.isUnderline !== undefined) document.execCommand('underline');
         
-        // Partial styling support
         if (updates.fontId) document.execCommand('fontName', false, updates.fontId);
         if (updates.inkColor) document.execCommand('foreColor', false, updates.inkColor);
         if (updates.textAlign) {
-           const align = updates.textAlign === 'left' ? 'justifyLeft' : updates.textAlign === 'center' ? 'justifyCenter' : 'justifyRight';
-           document.execCommand(align);
+            const align = updates.textAlign === 'left' ? 'justifyLeft' : updates.textAlign === 'center' ? 'justifyCenter' : 'justifyRight';
+            document.execCommand(align);
         }
         if (updates.fontSize) {
-           // Map to 1-7 scale for execCommand (approximate mapping)
-           // 1: 10px, 2: 13px, 3: 16px, 4: 18px, 5: 24px, 6: 32px, 7: 48px
-           const size = updates.fontSize === 'small' ? '3' : updates.fontSize === 'medium' ? '4' : '6';
-           document.execCommand('fontSize', false, size);
-           
-           // Re-apply current font to prevent it from resetting to generic
-           const currentFont = updates.fontId || activeConfig.fontId;
-           if (currentFont) {
-             document.execCommand('fontName', false, currentFont);
-           }
+            // Map to 1-7 scale for execCommand (approximate mapping)
+            // 1: 10px, 2: 13px, 3: 16px, 4: 18px, 5: 24px, 6: 32px, 7: 48px
+            // Small (16) -> 3, Medium (18) -> 4, Large (22) -> 5 (approx 24)
+            const size = updates.fontSize === 'small' ? '3' : updates.fontSize === 'medium' ? '4' : '5';
+            document.execCommand('fontSize', false, size);
+            
+            // Re-apply current font to prevent it from resetting to generic
+            const currentFont = updates.fontId || activeConfig.fontId;
+            if (currentFont) {
+              document.execCommand('fontName', false, currentFont);
+            }
+        }
+
+        if (shouldSelectAll) {
+          selection?.collapseToEnd();
         }
       }
 
