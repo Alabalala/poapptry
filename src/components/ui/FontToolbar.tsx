@@ -28,20 +28,7 @@ const COLORS = [
 ];
 
 export default function FontToolbar({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const { activeConfig, updateConfig } = usePoem();
-  const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
-  const insets = useSafeAreaInsets();
-
-  const fontCaps = FONT_CAPABILITIES[activeConfig.fontId] || { supportsBold: false, supportsItalic: false };
-
   if (!visible) return null;
-
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const paddingToBottom = 20;
-    const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
-    setIsScrolledToBottom(isCloseToBottom);
-  };
 
   return (
     <View style={styles.container}>
@@ -51,10 +38,32 @@ export default function FontToolbar({ visible, onClose }: { visible: boolean; on
           <Text style={styles.closeButton}>Done</Text>
         </TouchableOpacity>
       </View>
+      <FontPanelContent />
+    </View>
+  );
+}
 
+export function FontPanelContent({ scrollContentStyle }: { scrollContentStyle?: any }) {
+  const { activeConfig, updateConfig } = usePoem();
+  const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
+  const insets = useSafeAreaInsets(); // Only needed for gradient overlay
+  const fontCaps = FONT_CAPABILITIES[activeConfig.fontId] || { supportsBold: false, supportsItalic: false };
+
+  // Calculate default padding if not provided
+  const paddingBottom = scrollContentStyle?.paddingBottom ?? (Math.max(insets.bottom, 20) + 60);
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 20;
+    const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+    setIsScrolledToBottom(isCloseToBottom);
+  };
+
+  return (
+    <View style={{ flex: 1 }}>
       <ScrollView 
         showsVerticalScrollIndicator={true} 
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 20) + 60 }]}
+        contentContainerStyle={[styles.scrollContent, scrollContentStyle || { paddingBottom }]}
         indicatorStyle="black"
         onScroll={handleScroll}
         scrollEventThrottle={16}

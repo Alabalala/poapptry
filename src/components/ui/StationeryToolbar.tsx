@@ -9,12 +9,45 @@ import { usePoem } from '../../context/PoemContext';
 type Tab = 'paper' | 'decor' | 'stamps';
 
 export default function StationeryToolbar({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const { activeConfig, updateConfig, addStamp, addWashi, addBookmark, stamps, washiTapes, bookmarks } = usePoem();
-  const [activeTab, setActiveTab] = useState<Tab>('paper');
   const insets = useSafeAreaInsets();
-  const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
 
   if (!visible) return null;
+
+  return (
+    <View style={styles.container}>
+      <StationeryPanelContent 
+        onClose={onClose}
+        scrollContentStyle={{ paddingBottom: Math.max(insets.bottom, 20) + 60 }}
+        renderHeaderRight={() => (
+          <TouchableOpacity 
+            onPress={onClose} 
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={styles.headerButton}
+          >
+            <Text style={styles.closeButton}>Done</Text>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
+  );
+}
+
+export function StationeryPanelContent({ 
+  onClose, 
+  scrollContentStyle, 
+  renderHeaderRight 
+}: { 
+  onClose: () => void; 
+  scrollContentStyle?: any;
+  renderHeaderRight?: () => React.ReactNode;
+}) {
+  const { activeConfig, updateConfig, addStamp, addWashi, addBookmark } = usePoem();
+  const [activeTab, setActiveTab] = useState<Tab>('paper');
+  const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
+  const insets = useSafeAreaInsets();
+
+  // Calculate default padding if not provided
+  const paddingBottom = scrollContentStyle?.paddingBottom ?? (Math.max(insets.bottom, 20) + 60);
 
   const handleScroll = (event: any) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
@@ -106,7 +139,7 @@ export default function StationeryToolbar({ visible, onClose }: { visible: boole
   );
 
   return (
-    <View style={styles.container}>
+    <View style={{ flex: 1 }}>
       <View style={styles.header}>
         <View style={styles.tabs}>
           <TouchableOpacity
@@ -132,18 +165,12 @@ export default function StationeryToolbar({ visible, onClose }: { visible: boole
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity 
-          onPress={onClose} 
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          style={styles.headerButton}
-        >
-          <Text style={styles.closeButton}>Done</Text>
-        </TouchableOpacity>
+        {renderHeaderRight && renderHeaderRight()}
       </View>
 
       <ScrollView 
         showsVerticalScrollIndicator={true} 
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 20) + 60 }]}
+        contentContainerStyle={[styles.scrollContent, scrollContentStyle || { paddingBottom }]}
         indicatorStyle="black"
         onScroll={handleScroll}
         scrollEventThrottle={16}

@@ -1,12 +1,12 @@
 import { useRouter } from 'expo-router';
-import { ChevronLeft, MoreVertical, UserPlus } from 'lucide-react-native';
+import { ChevronLeft, FolderOpen, MoreVertical, UserPlus } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePoem } from '../../context/PoemContext';
 import PoemActionsMenu from './PoemActionsMenu';
 
-export default function TopBar({ onBack }: { onBack?: () => void }) {
+export default function TopBar({ onBack, isLargeScreen }: { onBack?: () => void; isLargeScreen?: boolean }) {
   const { title, setTitle, isEditing, isGuest } = usePoem();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -22,7 +22,11 @@ export default function TopBar({ onBack }: { onBack?: () => void }) {
           style={styles.backButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <ChevronLeft size={24} color="#374151" />
+          {isLargeScreen ? (
+            <FolderOpen size={24} color="#374151" />
+          ) : (
+            <ChevronLeft size={24} color="#374151" />
+          )}
         </TouchableOpacity>
         
         <TextInput

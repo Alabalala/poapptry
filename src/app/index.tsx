@@ -1,11 +1,12 @@
 import PaperBackground from '@/components/desk/PaperBackground';
 import DragOverlay from '@/components/ui/DragOverlay';
 import DrawerScreen from '@/components/ui/DrawerScreen';
+import SidePanel from '@/components/ui/SidePanel';
 import SignUpPrompt from '@/components/ui/SignUpPrompt';
 import { FONT_CAPABILITIES } from '@/constants/ThemeRegistry';
 import { Edit2, Menu } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
-import { Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, TextStyle, TouchableOpacity, View } from 'react-native';
+import { Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, TextStyle, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomToolbar from '../components/ui/BottomToolbar';
 import TopBar from '../components/ui/TopBar';
@@ -15,6 +16,10 @@ export default function Desk() {
   const { isEditing, toggleEditMode, activeConfig, pages, updatePageContent, setSelectedStampId } = usePoem();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
+
+  const isLargeScreen = windowWidth >= 1024;
+  const availableWidth = isLargeScreen && isEditing ? windowWidth - 320 : windowWidth;
 
   const fontCaps = FONT_CAPABILITIES[activeConfig.fontId] || { supportsBold: false, supportsItalic: false };
   const shouldUseBold = activeConfig.isBold && fontCaps.supportsBold;
@@ -43,61 +48,68 @@ export default function Desk() {
       <DrawerScreen isVisible={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
 
       {/* Top Bar (Visible in Edit Mode) */}
-      <TopBar onBack={() => setIsDrawerOpen(true)} />
+      <TopBar onBack={() => setIsDrawerOpen(true)} isLargeScreen={isLargeScreen} />
 
-      {/* Main Workspace */}
-        <View style={styles.workspace}>
-          <View
-            style={{ flex: 1, overflow: 'hidden' }}
-          >
-            {/* Background click handler - wraps content to detect taps outside paper */}
-            <Pressable 
-              style={[
-                styles.scrollContentPressable,
-                isEditing && { paddingBottom: editModePaddingBottom },
-                Platform.OS === 'web' && { cursor: 'default' } as any
-              ]} 
-              onPress={handleBackgroundPress}
+      <View style={{ flex: 1, flexDirection: 'row' }}>
+        <View style={{ flex: 1 }}>
+          {/* Main Workspace */}
+          <View style={styles.workspace}>
+            <View
+              style={{ flex: 1, overflow: 'hidden' }}
             >
-              {/* Paper Content - Single Page View */}
-              <View key={activePage.id} style={styles.paperContainer}>
-                <PaperBackground>
-                  <PageInput 
-                    content={activePage.content}
-                    onUpdate={(text: string) => updatePageContent(activePage.id, text)}
-                    activeConfig={activeConfig}
-                    isEditing={isEditing}
-                    shouldUseBold={shouldUseBold}
-                    shouldUseItalic={shouldUseItalic}
-                  />
-                </PaperBackground>
-              </View>
-            </Pressable>
+              {/* Background click handler - wraps content to detect taps outside paper */}
+              <Pressable 
+                style={[
+                  styles.scrollContentPressable,
+                  isEditing && { paddingBottom: editModePaddingBottom },
+                  Platform.OS === 'web' && { cursor: 'default' } as any
+                ]} 
+                onPress={handleBackgroundPress}
+              >
+                {/* Paper Content - Single Page View */}
+                <View key={activePage.id} style={styles.paperContainer}>
+                  <PaperBackground availableWidth={availableWidth}>
+                    <PageInput 
+                      content={activePage.content}
+                      onUpdate={(text: string) => updatePageContent(activePage.id, text)}
+                      activeConfig={activeConfig}
+                      isEditing={isEditing}
+                      shouldUseBold={shouldUseBold}
+                      shouldUseItalic={shouldUseItalic}
+                    />
+                  </PaperBackground>
+                </View>
+              </Pressable>
+            </View>
           </View>
+
+          {/* Bottom Toolbar (Visible in Edit Mode) */}
+          <BottomToolbar onOpenDrawer={() => setIsDrawerOpen(true)} isLargeScreen={isLargeScreen} />
+
+          {/* View Mode Controls */}
+          {!isEditing && (
+            <View style={[styles.viewModeControls, { bottom: Math.max(insets.bottom, 20) }]}>
+               <TouchableOpacity 
+                 style={styles.viewModeButton} 
+                 onPress={() => setIsDrawerOpen(true)}
+               >
+                 <Menu size={24} color="#374151" />
+               </TouchableOpacity>
+               
+               <TouchableOpacity 
+                 style={[styles.viewModeButton, styles.editButton]} 
+                 onPress={() => toggleEditMode()}
+               >
+                 <Edit2 size={24} color="#FFF" />
+                 <Text style={styles.editButtonText}>Edit</Text>
+               </TouchableOpacity>
+            </View>
+          )}
         </View>
 
-      {/* Bottom Toolbar (Visible in Edit Mode) */}
-      <BottomToolbar onOpenDrawer={() => setIsDrawerOpen(true)} />
-
-      {/* View Mode Controls */}
-      {!isEditing && (
-        <View style={[styles.viewModeControls, { bottom: Math.max(insets.bottom, 20) }]}>
-           <TouchableOpacity 
-             style={styles.viewModeButton} 
-             onPress={() => setIsDrawerOpen(true)}
-           >
-             <Menu size={24} color="#374151" />
-           </TouchableOpacity>
-           
-           <TouchableOpacity 
-             style={[styles.viewModeButton, styles.editButton]} 
-             onPress={() => toggleEditMode()}
-           >
-             <Edit2 size={24} color="#FFF" />
-             <Text style={styles.editButtonText}>Edit</Text>
-           </TouchableOpacity>
-        </View>
-      )}
+        {/* Side Panel for Large Screens */}
+        {isLargeScreen && isEditing && <SidePanel />}
+      </View>
       
       {/* Sign Up Prompt */}
       <SignUpPrompt />

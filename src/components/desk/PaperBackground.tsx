@@ -8,8 +8,9 @@ interface PaperBackgroundProps {
   children: React.ReactNode;
 }
 
-export default function PaperBackground({ children }: PaperBackgroundProps) {
+export default function PaperBackground({ children, availableWidth }: PaperBackgroundProps & { availableWidth?: number }) {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const effectiveWidth = availableWidth ?? windowWidth;
   const { 
     activeConfig, 
     stamps, 
@@ -32,7 +33,7 @@ export default function PaperBackground({ children }: PaperBackgroundProps) {
   const MAX_WIDTH_RATIO = 0.90; // Max 90% of screen width
 
   const maxAllowedHeight = windowHeight * MAX_HEIGHT_RATIO;
-  const maxAllowedWidth = windowWidth * MAX_WIDTH_RATIO;
+  const maxAllowedWidth = effectiveWidth * MAX_WIDTH_RATIO;
 
   let paperHeight = maxAllowedHeight;
   let paperWidth = paperHeight * A4_RATIO;

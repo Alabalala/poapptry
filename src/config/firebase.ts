@@ -5,12 +5,12 @@ import { Auth, getAuth, GoogleAuthProvider, initializeAuth } from 'firebase/auth
 import { Firestore, getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBpJgimJEaCjroCeHqSmZMQPqf4wF9Rb4k",
-  authDomain: "poapptry.firebaseapp.com",
-  projectId: "poapptry",
-  storageBucket: "poapptry.firebasestorage.app",
-  messagingSenderId: "7435687050",
-  appId: "1:7435687050:web:bae0b62fec49204d920973"
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID
 };
 
 // Initialize Firebase

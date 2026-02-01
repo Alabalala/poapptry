@@ -10,12 +10,12 @@ interface BottomToolbarProps {
   onOpenDrawer: () => void;
 }
 
-export default function BottomToolbar({ onOpenDrawer }: BottomToolbarProps) {
+export default function BottomToolbar({ onOpenDrawer, isLargeScreen }: BottomToolbarProps & { isLargeScreen?: boolean }) {
   const { isEditing } = usePoem();
   const insets = useSafeAreaInsets();
   const [activeToolbar, setActiveToolbar] = useState<'none' | 'font' | 'stationery'>('none');
 
-  if (!isEditing) return null;
+  if (!isEditing || isLargeScreen) return null;
 
   const toggleToolbar = (toolbar: 'font' | 'stationery') => {
     setActiveToolbar(current => current === toolbar ? 'none' : toolbar);
