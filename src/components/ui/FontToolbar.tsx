@@ -2,7 +2,7 @@ import { FONT_CAPABILITIES } from '@/constants/ThemeRegistry';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AlignCenter, AlignLeft, AlignRight, Bold, Check, ChevronLeft, ChevronRight, Italic, Plus, Underline } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
-import { NativeScrollEvent, NativeSyntheticEvent, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View, ViewStyle } from 'react-native';
+import { Keyboard, NativeScrollEvent, NativeSyntheticEvent, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePoem } from '../../context/PoemContext';
 
@@ -88,8 +88,19 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
     }
   };
 
+  // Helper to safely execute commands despite deprecation
+  // document.execCommand is deprecated but is currently the only native way
+  // to handle contentEditable operations without a heavy external library.
+  const safeExecCommand = (command: string, value?: string) => {
+    if (typeof document !== 'undefined') {
+      (document as any).execCommand(command, false, value);
+    }
+  };
+
   // Helper to update either selected text box or global config
   const handleUpdate = (updates: any) => {
+    Keyboard.dismiss();
+    
     if (selectedTextBoxId) {
       // Special handling for Web rich text commands
       if (Platform.OS === 'web') {
@@ -99,30 +110,30 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
         const shouldSelectAll = selection && selection.isCollapsed;
 
         if (shouldSelectAll) {
-          document.execCommand('selectAll');
+          safeExecCommand('selectAll');
         }
 
-        if (updates.isBold !== undefined) document.execCommand('bold');
-        if (updates.isItalic !== undefined) document.execCommand('italic');
-        if (updates.isUnderline !== undefined) document.execCommand('underline');
+        if (updates.isBold !== undefined) safeExecCommand('bold');
+        if (updates.isItalic !== undefined) safeExecCommand('italic');
+        if (updates.isUnderline !== undefined) safeExecCommand('underline');
         
-        if (updates.fontId) document.execCommand('fontName', false, updates.fontId);
-        if (updates.inkColor) document.execCommand('foreColor', false, updates.inkColor);
+        if (updates.fontId) safeExecCommand('fontName', updates.fontId);
+        if (updates.inkColor) safeExecCommand('foreColor', updates.inkColor);
         if (updates.textAlign) {
             const align = updates.textAlign === 'left' ? 'justifyLeft' : updates.textAlign === 'center' ? 'justifyCenter' : 'justifyRight';
-            document.execCommand(align);
+            safeExecCommand(align);
         }
         if (updates.fontSize) {
             // Map to 1-7 scale for execCommand (approximate mapping)
             // 1: 10px, 2: 13px, 3: 16px, 4: 18px, 5: 24px, 6: 32px, 7: 48px
             // Small (16) -> 3, Medium (18) -> 4, Large (22) -> 5 (approx 24)
             const size = updates.fontSize === 'small' ? '3' : updates.fontSize === 'medium' ? '4' : '5';
-            document.execCommand('fontSize', false, size);
+            safeExecCommand('fontSize', size);
             
             // Re-apply current font to prevent it from resetting to generic
             const currentFont = updates.fontId || activeConfig.fontId;
             if (currentFont) {
-              document.execCommand('fontName', false, currentFont);
+              safeExecCommand('fontName', currentFont);
             }
         }
 

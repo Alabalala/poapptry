@@ -35,6 +35,7 @@ const RichTextBox = forwardRef<RichTextBoxRef, RichTextBoxProps>(({ textBox, onU
         style={[
           styles.input,
           {
+            padding: 8 * scale,
             fontFamily: textBox.style.fontFamily,
             fontSize: textBox.style.fontSize * scale,
               lineHeight: textBox.style.lineHeight ? textBox.style.lineHeight * scale : undefined,

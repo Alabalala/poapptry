@@ -133,6 +133,7 @@ export default function PoemThumbnail({ poem, width }: PoemThumbnailProps) {
                      left,
                      top,
                      width: boxWidth,
+                     padding: 8,
                      // height: 'auto', // Let text expand
                    }}
                  >

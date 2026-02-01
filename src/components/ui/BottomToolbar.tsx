@@ -1,6 +1,6 @@
 import { FolderOpen, Palette, Type } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Keyboard, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePoem } from '../../context/PoemContext';
 import FontToolbar from './FontToolbar';
@@ -20,6 +20,9 @@ export default function BottomToolbar({ onOpenDrawer, activeToolbar, setActiveTo
   if (!isEditing || isLargeScreen) return null;
 
   const toggleToolbar = (toolbar: 'font' | 'stationery') => {
+    if (activeToolbar !== toolbar) {
+      Keyboard.dismiss();
+    }
     setActiveToolbar(activeToolbar === toolbar ? 'none' : toolbar);
   };
 

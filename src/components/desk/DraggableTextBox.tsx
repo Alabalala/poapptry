@@ -1,7 +1,7 @@
 import { TextBox } from '@/context/PoemContext';
 import { Clipboard, Copy, Trash2, Type } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { PanResponder, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Keyboard, PanResponder, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import RichTextBox from './RichTextBox';
 
 interface DraggableTextBoxProps {
@@ -332,7 +332,13 @@ export default function DraggableTextBox({
             <Text style={styles.toolbarText}>Paste</Text>
           </TouchableOpacity>
           <View style={styles.divider} />
-          <TouchableOpacity onPress={onStyle} style={styles.toolbarButton}>
+          <TouchableOpacity 
+            onPress={() => {
+              Keyboard.dismiss();
+              onStyle();
+            }} 
+            style={styles.toolbarButton}
+          >
             <Type size={16} color="#374151" />
             <Text style={styles.toolbarText}>Style</Text>
           </TouchableOpacity>

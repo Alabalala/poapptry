@@ -62,7 +62,7 @@ const RichTextBox = forwardRef<RichTextBoxRef, RichTextBoxProps>(({ textBox, onU
           height: '100%',
           outline: 'none',
           overflow: 'auto',
-          padding: '8px',
+          padding: `${8 * scale}px`,
           fontFamily: textBox.style.fontFamily,
           fontSize: `${textBox.style.fontSize * scale}px`,
           lineHeight: textBox.style.lineHeight ? `${textBox.style.lineHeight * scale}px` : undefined,
@@ -83,9 +83,9 @@ const RichTextBox = forwardRef<RichTextBoxRef, RichTextBoxProps>(({ textBox, onU
         <div
           style={{
             position: 'absolute',
-            top: 8,
-            left: 8,
-            right: 8,
+            top: 8 * scale,
+            left: 8 * scale,
+            right: 8 * scale,
             color: 'rgba(156, 163, 175, 0.6)', // Gray-400 with opacity
             pointerEvents: 'none', // Allow clicking through to the editor
             fontFamily: textBox.style.fontFamily,
