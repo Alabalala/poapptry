@@ -132,3 +132,6 @@ Instead of a single full-page text area, the app now uses movable, resizable tex
 -   **Mobile Interaction:** Opening the Style menu automatically dismisses the keyboard (and blurs the input) to allow full view of styling options. Tapping the text box again re-opens the keyboard.
 
 ## 6. Future Considerations
+
+### Roadmap
+- **Native Rich Text Support:** Replace basic `TextInput` with a dedicated rich text editor (e.g., `react-native-pell-rich-editor` or `@10play/tentap-editor`) on iOS/Android to support mixed styling (bold/italic specific words) and achieve feature parity with Web.
