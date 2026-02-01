@@ -1,5 +1,5 @@
 import { TextBox } from '@/context/PoemContext';
-import React, { memo, useEffect, useRef } from 'react';
+import React, { forwardRef, memo, useEffect, useImperativeHandle, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 interface RichTextBoxProps {
@@ -10,9 +10,21 @@ interface RichTextBoxProps {
   shouldFocus?: boolean;
 }
 
-function RichTextBox({ textBox, onUpdate, onFocus, isEditing, shouldFocus }: RichTextBoxProps) {
+export interface RichTextBoxRef {
+  focus: () => void;
+}
+
+const RichTextBox = forwardRef<RichTextBoxRef, RichTextBoxProps>(({ textBox, onUpdate, onFocus, isEditing, shouldFocus }, ref) => {
   const divRef = useRef<HTMLDivElement>(null);
   const isInternalUpdate = useRef(false);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      if (divRef.current) {
+        divRef.current.focus();
+      }
+    }
+  }));
 
   useEffect(() => {
     if (shouldFocus && divRef.current) {
@@ -43,7 +55,7 @@ function RichTextBox({ textBox, onUpdate, onFocus, isEditing, shouldFocus }: Ric
         contentEditable={isEditing}
         onInput={handleInput}
         onFocus={onFocus}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()} // Stop propagation to prevent unselecting
         style={{
           width: '100%',
           height: '100%',
@@ -82,7 +94,9 @@ function RichTextBox({ textBox, onUpdate, onFocus, isEditing, shouldFocus }: Ric
       )}
     </View>
   );
-}
+});
+
+RichTextBox.displayName = 'RichTextBox';
 
 // Memoize to prevent re-renders during parent drag
 export default memo(RichTextBox, (prev, next) => {

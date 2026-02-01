@@ -1,5 +1,5 @@
 import { TextBox } from '@/context/PoemContext';
-import React from 'react';
+import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 interface RichTextBoxProps {
@@ -10,7 +10,19 @@ interface RichTextBoxProps {
   shouldFocus?: boolean;
 }
 
-export default function RichTextBox({ textBox, onUpdate, onFocus, isEditing, shouldFocus }: RichTextBoxProps) {
+export interface RichTextBoxRef {
+  focus: () => void;
+}
+
+const RichTextBox = forwardRef<RichTextBoxRef, RichTextBoxProps>(({ textBox, onUpdate, onFocus, isEditing, shouldFocus }, ref) => {
+  const inputRef = useRef<TextInput>(null);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      inputRef.current?.focus();
+    }
+  }));
+
   // Native fallback: Plain text input
   // Rich text on native requires a complex library (e.g. react-native-pell) 
   // which is out of scope for a single file change without adding dependencies.
@@ -18,6 +30,7 @@ export default function RichTextBox({ textBox, onUpdate, onFocus, isEditing, sho
   return (
     <View style={styles.container}>
       <TextInput
+        ref={inputRef}
         style={[
           styles.input,
           {
@@ -40,7 +53,11 @@ export default function RichTextBox({ textBox, onUpdate, onFocus, isEditing, sho
       )}
     </View>
   );
-}
+});
+
+RichTextBox.displayName = 'RichTextBox';
+
+export default RichTextBox;
 
 const styles = StyleSheet.create({
   container: {

@@ -20,7 +20,7 @@ export default function PoemThumbnail({ poem, width }: PoemThumbnailProps) {
   const scale = width / BASE_WIDTH;
 
   const { activeConfig, pages, stamps = [], washiTapes = [], bookmarks = [] } = poem;
-  const content = pages[0]?.content || '';
+  const content = pages[0]?.textBoxes?.map(t => t.content).join('\n') || '';
 
   // Helper to render decorations
   const renderDecoration = (d: Decoration) => {

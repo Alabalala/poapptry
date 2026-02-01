@@ -38,7 +38,9 @@ export default function PoemActionsMenu({ visible, onClose }: PoemActionsMenuPro
   const handleShare = async () => {
     try {
       // Basic text share for now
-      const poemContent = pages.map(p => p.content).join('\n\n');
+      const poemContent = pages.map(p => 
+        p.textBoxes?.map(t => t.content).join('\n') || ''
+      ).join('\n\n');
       const message = `${title}\n\n${poemContent}`;
       
       await Share.share({

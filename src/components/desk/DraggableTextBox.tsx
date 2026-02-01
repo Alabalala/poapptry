@@ -39,6 +39,7 @@ export default function DraggableTextBox({
 
   // Typing state: If true, user is editing text. If false, user is moving box.
   const [isTyping, setIsTyping] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Track actual rendered size for accurate resizing start
   const actualSizeRef = useRef({ width: 0, height: 0 });
@@ -65,6 +66,8 @@ export default function DraggableTextBox({
   const paperSizeRef = useRef(paperSize);
   const wasSelectedRef = useRef(isSelected);
   const interactionRef = useRef({ wasSelectedOnGrant: false });
+  const isDraggingRef = useRef(false);
+  const richTextBoxRef = useRef<any>(null);
 
   useEffect(() => { currentLayoutRef.current = localLayout; }, [localLayout]);
   useEffect(() => { paperSizeRef.current = paperSize; }, [paperSize]);
@@ -81,42 +84,50 @@ export default function DraggableTextBox({
   // Move Responder (Attached to Overlay)
   const moveResponder = useRef(
     PanResponder.create({
-      // We always want to capture if the Overlay is hit (which means isTyping is false)
-      onStartShouldSetPanResponder: (e) => {
-        e.stopPropagation?.();
-        return true;
-      },
-      onMoveShouldSetPanResponder: (e) => {
-        e.stopPropagation?.();
-        return true;
-      },
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (e) => {
         e.stopPropagation?.();
         interactionRef.current.wasSelectedOnGrant = wasSelectedRef.current;
+        isDraggingRef.current = false;
         onSelect();
         initialGesture.current = { ...currentLayoutRef.current };
       },
       onPanResponderMove: (_, gestureState) => {
-        const { width: pWidth, height: pHeight } = paperSizeRef.current;
-        const newX = initialGesture.current.x + gestureState.dx;
-        const newY = initialGesture.current.y + gestureState.dy;
-        
-        // No clamping to allow free movement
-        setLocalLayout(prev => ({ ...prev, x: newX, y: newY }));
+        const { dx, dy } = gestureState;
+        if (!isDraggingRef.current && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+           isDraggingRef.current = true;
+           setIsDragging(true);
+        }
+
+        if (isDraggingRef.current || Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+          const newX = initialGesture.current.x + dx;
+          const newY = initialGesture.current.y + dy;
+          setLocalLayout(prev => ({ ...prev, x: newX, y: newY }));
+        }
       },
       onPanResponderRelease: (_, gestureState) => {
-        // Detect Tap to Enter Typing Mode
-        const isTap = Math.hypot(gestureState.dx, gestureState.dy) < 5;
+        const wasDragging = isDraggingRef.current;
+        setIsDragging(false);
+        isDraggingRef.current = false;
         
+        const { dx, dy } = gestureState;
+        const isTap = !wasDragging && Math.abs(dx) < 5 && Math.abs(dy) < 5;
+
         if (isTap) {
-          if (interactionRef.current.wasSelectedOnGrant) {
-            setIsTyping(true);
-          }
+          setIsTyping(true);
+          // Force focus on the underlying input
+          // Use setTimeout to allow render cycle to complete and overlay to unmount
+          setTimeout(() => {
+             if (richTextBoxRef.current) {
+                richTextBoxRef.current.focus();
+             }
+          }, 0);
         } else {
           // Commit move
           const { width: pWidth, height: pHeight } = paperSizeRef.current;
-          const newX = initialGesture.current.x + gestureState.dx;
-          const newY = initialGesture.current.y + gestureState.dy;
+          const newX = initialGesture.current.x + dx;
+          const newY = initialGesture.current.y + dy;
           const width = initialGesture.current.width;
           const height = initialGesture.current.height;
           
@@ -242,10 +253,24 @@ export default function DraggableTextBox({
           zIndex: isSelected ? 100 : textBox.zIndex,
           borderWidth: isSelected ? 1 : 0,
           borderColor: '#3B82F6',
-        },
+          cursor: isDragging ? 'move' : (isSelected && !isTyping ? 'move' : 'default'),
+        } as any,
       ]}
       onLayout={handleLayout}
+      // @ts-ignore - Web only click handling to prevent unselection
+      onClick={(e: any) => e.stopPropagation()}
     >
+      {/* Drag Overlay - Only active when NOT typing */}
+      {!isTyping && (
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            { zIndex: 1, backgroundColor: 'transparent' }
+          ]}
+          {...moveResponder.panHandlers}
+        />
+      )}
+
       {/* Floating Toolbar */}
       {isSelected && isEditing && (
         <View 
@@ -279,25 +304,17 @@ export default function DraggableTextBox({
       {/* Content */}
       <View style={{ flex: 1, cursor: 'text' } as any}>
         <RichTextBox
+          ref={richTextBoxRef}
           textBox={textBox}
           onUpdate={(content) => onUpdate({ content })}
-          onFocus={onSelect}
+          onFocus={() => {
+            onSelect();
+            setIsTyping(true);
+          }}
           isEditing={isEditing}
           shouldFocus={isTyping}
         />
       </View>
-
-      {/* Drag Overlay - Captures gestures when NOT typing */}
-      {isEditing && (
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            { zIndex: 1, backgroundColor: 'transparent' } // Above text, below handles
-          ]}
-          pointerEvents={isTyping ? 'none' : 'auto'}
-          {...moveResponder.panHandlers}
-        />
-      )}
 
       {/* Handles & Controls (Always on top) */}
       {isSelected && isEditing && (
