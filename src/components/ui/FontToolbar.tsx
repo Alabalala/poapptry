@@ -1,8 +1,8 @@
 import { FONT_CAPABILITIES } from '@/constants/ThemeRegistry';
 import { LinearGradient } from 'expo-linear-gradient';
-import { AlignCenter, AlignLeft, AlignRight, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, AlignVerticalJustifyStart, Bold, Check, Italic, Plus, Underline } from 'lucide-react-native';
-import React, { useState } from 'react';
-import { NativeScrollEvent, NativeSyntheticEvent, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AlignCenter, AlignLeft, AlignRight, Bold, Check, ChevronLeft, ChevronRight, Italic, Plus, Underline } from 'lucide-react-native';
+import React, { useRef, useState } from 'react';
+import { NativeScrollEvent, NativeSyntheticEvent, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePoem } from '../../context/PoemContext';
 
@@ -28,10 +28,25 @@ const COLORS = [
 ];
 
 export default function FontToolbar({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const { width } = useWindowDimensions();
+  
   if (!visible) return null;
 
+  const isWideScreen = width > 768;
+  const containerStyle: ViewStyle = isWideScreen 
+    ? { 
+        width: '50%', 
+        left: '25%', 
+        right: 'auto',
+        borderTopLeftRadius: 24, 
+        borderTopRightRadius: 24,
+        // On wide screens, we might want it to look more like a card if it's not attached to bottom, 
+        // but user asked for "at least 50% width", likely still attached to bottom.
+      } 
+    : { left: 0, right: 0 };
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, containerStyle]}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Text Style</Text>
         <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -44,11 +59,34 @@ export default function FontToolbar({ visible, onClose }: { visible: boolean; on
 }
 
 export function FontPanelContent({ scrollContentStyle, onClose }: { scrollContentStyle?: any, onClose?: () => void }) {
+  const { width } = useWindowDimensions();
   const { activeConfig, updateConfig, addTextBox, pages, selectedTextBoxId, updateTextBox } = usePoem();
+  
+  // Determine if arrows are needed
+  // On wide screens > 768, panel is 50% width. Otherwise full width.
+  const panelWidth = width > 768 ? width * 0.5 : width;
+  // Font list is approx 600px. If panel is narrower, show arrows.
+  const showArrows = panelWidth < 650;
+
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
+  const fontScrollViewRef = useRef<ScrollView>(null);
+  const [fontScrollX, setFontScrollX] = useState(0);
   const insets = useSafeAreaInsets(); // Only needed for gradient overlay
   const fontCaps = FONT_CAPABILITIES[activeConfig.fontId] || { supportsBold: false, supportsItalic: false };
   const activePageId = pages[0]?.id || '1'; // Assuming single page or active page logic
+
+  const handleFontScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    setFontScrollX(event.nativeEvent.contentOffset.x);
+  };
+
+  const scrollFonts = (direction: 'left' | 'right') => {
+    const scrollAmount = 150;
+    if (direction === 'left') {
+      fontScrollViewRef.current?.scrollTo({ x: Math.max(0, fontScrollX - scrollAmount), animated: true });
+    } else {
+      fontScrollViewRef.current?.scrollTo({ x: fontScrollX + scrollAmount, animated: true });
+    }
+  };
 
   // Helper to update either selected text box or global config
   const handleUpdate = (updates: any) => {
@@ -71,6 +109,12 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
            // 1: 10px, 2: 13px, 3: 16px, 4: 18px, 5: 24px, 6: 32px, 7: 48px
            const size = updates.fontSize === 'small' ? '3' : updates.fontSize === 'medium' ? '4' : '6';
            document.execCommand('fontSize', false, size);
+           
+           // Re-apply current font to prevent it from resetting to generic
+           const currentFont = updates.fontId || activeConfig.fontId;
+           if (currentFont) {
+             document.execCommand('fontName', false, currentFont);
+           }
         }
       }
 
@@ -82,8 +126,10 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
       }
       if (updates.textAlign) styleUpdates.textAlign = updates.textAlign;
       if (updates.inkColor) styleUpdates.color = updates.inkColor;
-      // Bold/Italic/Underline are not yet in TextBox style properly (except rich text), 
-      // but for now let's assume we update the "default" style for the box
+      
+      if (updates.isBold !== undefined) styleUpdates.fontWeight = updates.isBold ? 'bold' : 'normal';
+      if (updates.isItalic !== undefined) styleUpdates.fontStyle = updates.isItalic ? 'italic' : 'normal';
+      if (updates.isUnderline !== undefined) styleUpdates.textDecorationLine = updates.isUnderline ? 'underline' : 'none';
       
       if (Object.keys(styleUpdates).length > 0) {
         updateTextBox(activePageId, selectedTextBoxId, { style: styleUpdates });
@@ -110,6 +156,21 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
     if (onClose) onClose();
   };
 
+  if (!selectedTextBoxId) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        <Text style={{ color: '#6B7280', fontSize: 16, marginBottom: 20 }}>Select a text box to edit style</Text>
+        <TouchableOpacity
+            style={[styles.actionButton, { width: 'auto', paddingHorizontal: 24 }]}
+            onPress={handleAddTextBox}
+          >
+            <Plus size={20} color="#FFF" />
+            <Text style={styles.actionButtonText}>Add New Text Box</Text>
+          </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <ScrollView 
@@ -133,23 +194,42 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
 
         {/* Font Family */}
         <SectionLabel label="Font" />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-          {FONTS.map((font) => (
-            <TouchableOpacity
-              key={font}
-              onPress={() => handleUpdate({ fontId: font })}
-              // @ts-ignore - Web specific prop
-              onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
-              style={[
-                styles.fontOption,
-                activeConfig.fontId === font && styles.activeOption
-              ]}
-            >
-              <Text style={[styles.fontPreview, { fontFamily: font === 'PressStart2P' ? 'PressStart2P' : font }]}>Ag</Text>
-              <Text style={styles.fontName}>{font === 'PressStart2P' ? 'Press Start 2P' : font}</Text>
+        <View style={styles.fontScrollContainer}>
+          {showArrows && (
+            <TouchableOpacity onPress={() => scrollFonts('left')} style={styles.scrollArrow}>
+              <ChevronLeft size={24} color="#374151" />
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+          )}
+          <ScrollView 
+            ref={fontScrollViewRef}
+            horizontal 
+            showsHorizontalScrollIndicator={false} 
+            style={styles.horizontalScroll}
+            onScroll={handleFontScroll}
+            scrollEventThrottle={16}
+          >
+            {FONTS.map((font) => (
+              <TouchableOpacity
+                key={font}
+                onPress={() => handleUpdate({ fontId: font })}
+                // @ts-ignore - Web specific prop
+                onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
+                style={[
+                  styles.fontOption,
+                  activeConfig.fontId === font && styles.activeOption
+                ]}
+              >
+                <Text style={[styles.fontPreview, { fontFamily: font === 'PressStart2P' ? 'PressStart2P' : font }]}>Ag</Text>
+                <Text style={styles.fontName}>{font === 'PressStart2P' ? 'Press Start 2P' : font}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          {showArrows && (
+            <TouchableOpacity onPress={() => scrollFonts('right')} style={styles.scrollArrow}>
+              <ChevronRight size={24} color="#374151" />
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* Font Size & Line Spacing */}
         <View style={styles.row}>
@@ -201,9 +281,9 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
       </View>
     </View>
 
-    {/* Alignment Horizontal & Vertical */}
+    {/* Alignment Horizontal */}
     <View style={styles.row}>
-      <View style={styles.halfCol}>
+      <View style={{ flex: 1 }}>
         <SectionLabel label="Horizontal Align" />
         <View style={styles.buttonGroup}>
           <TouchableOpacity
@@ -229,36 +309,6 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
             style={[styles.groupButton, activeConfig.textAlign === 'right' && styles.activeGroupButton]}
           >
             <AlignRight size={18} color={activeConfig.textAlign === 'right' ? '#FFF' : '#374151'} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.halfCol}>
-        <SectionLabel label="Vertical Align" />
-        <View style={styles.buttonGroup}>
-          <TouchableOpacity
-            onPress={() => handleUpdate({ verticalAlign: 'top' })}
-            // @ts-ignore - Web specific prop
-            onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
-            style={[styles.groupButton, activeConfig.verticalAlign === 'top' && styles.activeGroupButton]}
-          >
-            <AlignVerticalJustifyStart size={18} color={activeConfig.verticalAlign === 'top' ? '#FFF' : '#374151'} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleUpdate({ verticalAlign: 'center' })}
-            // @ts-ignore - Web specific prop
-            onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
-            style={[styles.groupButton, activeConfig.verticalAlign === 'center' && styles.activeGroupButton]}
-          >
-            <AlignVerticalJustifyCenter size={18} color={activeConfig.verticalAlign === 'center' ? '#FFF' : '#374151'} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleUpdate({ verticalAlign: 'bottom' })}
-            // @ts-ignore - Web specific prop
-            onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
-            style={[styles.groupButton, activeConfig.verticalAlign === 'bottom' && styles.activeGroupButton]}
-          >
-            <AlignVerticalJustifyEnd size={18} color={activeConfig.verticalAlign === 'bottom' ? '#FFF' : '#374151'} />
           </TouchableOpacity>
         </View>
       </View>
@@ -346,8 +396,7 @@ const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    // left/right handled dynamically
     backgroundColor: 'white',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
@@ -399,8 +448,21 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  horizontalScroll: {
+  fontScrollContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 20,
+    gap: 8,
+  },
+  scrollArrow: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  horizontalScroll: {
+    flex: 1,
   },
   fontOption: {
     alignItems: 'center',
@@ -445,6 +507,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 8,
     borderRadius: 6,
+    height: 44,
   },
   activeGroupButton: {
     backgroundColor: '#3B82F6',

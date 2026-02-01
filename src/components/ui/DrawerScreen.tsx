@@ -6,19 +6,50 @@ import { useRouter } from 'expo-router';
 import { LogOut, Plus, Trash2, User, X } from 'lucide-react-native';
 import React, { useEffect, useRef } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  Dimensions,
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  useWindowDimensions,
-  View
+    Alert,
+    Animated,
+    Dimensions,
+    FlatList,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    useWindowDimensions,
+    View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PoemThumbnail from './PoemThumbnail';
+
+const SkeletonItem = ({ width }: { width: number }) => {
+  const opacity = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 0.7,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  const A4_RATIO = 0.707;
+  const height = width / A4_RATIO;
+
+  return (
+    <View style={{ width, marginBottom: 15 }}>
+      <Animated.View style={{ width, height, backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 12, opacity }} />
+      <Animated.View style={{ width: '80%', height: 14, backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 6, opacity }} />
+      <Animated.View style={{ width: '40%', height: 12, backgroundColor: '#E5E7EB', borderRadius: 4, opacity }} />
+    </View>
+  );
+};
 
 const { width: INITIAL_WIDTH } = Dimensions.get('window');
 const DRAWER_WIDTH_INITIAL = INITIAL_WIDTH; // Full Screen
@@ -215,7 +246,11 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
               </View>
 
               {loading ? (
-                <ActivityIndicator size="large" color="#3B82F6" style={{ marginTop: 40 }} />
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: GAP, paddingTop: 10 }}>
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <SkeletonItem key={i} width={itemWidth} />
+                  ))}
+                </View>
               ) : poems.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyStateText}>No poems yet. Create one!</Text>

@@ -66,6 +66,9 @@ const RichTextBox = forwardRef<RichTextBoxRef, RichTextBoxProps>(({ textBox, onU
           fontSize: `${textBox.style.fontSize}px`,
           textAlign: textBox.style.textAlign,
           color: textBox.style.color,
+          fontWeight: textBox.style.fontWeight,
+          fontStyle: textBox.style.fontStyle,
+          textDecoration: textBox.style.textDecorationLine,
           cursor: isEditing ? 'text' : 'default',
           whiteSpace: 'pre-wrap', // Preserve line breaks
           wordBreak: 'break-word',

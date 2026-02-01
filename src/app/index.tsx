@@ -33,7 +33,7 @@ export default function Desk() {
   const { width: windowWidth } = useWindowDimensions();
 
   const isLargeScreen = windowWidth >= 1024;
-  const availableWidth = isLargeScreen && isEditing ? windowWidth - 320 : windowWidth;
+  const availableWidth = isLargeScreen && isEditing ? windowWidth * 0.5 : windowWidth;
   
   // Ref for PaperBackground to get its dimensions for boundary checking
   const [paperLayout, setPaperLayout] = useState({ width: 0, height: 0 });
@@ -47,6 +47,7 @@ export default function Desk() {
     Keyboard.dismiss();
     setSelectedStampId(null);
     setSelectedTextBoxId(null);
+    setActiveToolbar('none');
     // Only edit when clicking button as per request
     // toggleEditMode();
   };

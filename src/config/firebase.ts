@@ -3,6 +3,7 @@ import { FirebaseApp, getApp, getApps, initializeApp } from 'firebase/app';
 import * as FirebaseAuth from 'firebase/auth';
 import { Auth, getAuth, GoogleAuthProvider, initializeAuth } from 'firebase/auth';
 import { Firestore, getFirestore } from 'firebase/firestore';
+import { Platform } from 'react-native';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -20,17 +21,24 @@ let db: Firestore;
 
 if (!getApps().length) {
   app = initializeApp(firebaseConfig);
-  // Extract getReactNativePersistence safely
-  const { getReactNativePersistence } = FirebaseAuth as any;
   
-  if (getReactNativePersistence) {
-    auth = initializeAuth(app, {
-      persistence: getReactNativePersistence(AsyncStorage)
-    });
+  if (Platform.OS === 'web') {
+    // On web, getAuth() uses browserLocalPersistence by default.
+    // Using initializeAuth() without persistence args (as before) would default to inMemoryPersistence in some versions.
+    auth = getAuth(app);
   } else {
-    // Fallback or just standard init (though persistence might be issue)
-    auth = initializeAuth(app);
+    // Extract getReactNativePersistence safely
+    const { getReactNativePersistence } = FirebaseAuth as any;
+    
+    if (getReactNativePersistence) {
+      auth = initializeAuth(app, {
+        persistence: getReactNativePersistence(AsyncStorage)
+      });
+    } else {
+      auth = initializeAuth(app);
+    }
   }
+  
   db = getFirestore(app);
 } else {
   app = getApp();

@@ -1,14 +1,16 @@
+import { Stamp, Type } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { FontPanelContent } from './FontToolbar';
 import { StationeryPanelContent } from './StationeryToolbar';
-import { Type, Stamp } from 'lucide-react-native';
 
 export default function SidePanel() {
   const [activeTool, setActiveTool] = useState<'font' | 'stationery'>('font');
+  const { width } = useWindowDimensions();
+  const isLargeScreen = width >= 1024;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isLargeScreen && { width: '50%' }]}>
       {/* Top Switcher */}
       <View style={styles.switcher}>
         <TouchableOpacity 

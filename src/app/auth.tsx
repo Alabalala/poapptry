@@ -175,9 +175,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)', // Semi-transparent background
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
   content: {
+    width: '100%',
+    maxWidth: 480,
     backgroundColor: '#FFF',
     borderRadius: 24,
     padding: 24,

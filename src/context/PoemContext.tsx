@@ -53,6 +53,9 @@ export interface TextBox {
     fontSize: number;
     textAlign: 'left' | 'center' | 'right';
     color: string;
+    fontWeight?: 'normal' | 'bold';
+    fontStyle?: 'normal' | 'italic';
+    textDecorationLine?: 'none' | 'underline' | 'line-through' | 'underline line-through';
   }
 }
 
@@ -180,8 +183,9 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
           fontSize: style.fontSize === 16 ? 'small' : style.fontSize === 22 ? 'large' : 'medium',
           textAlign: style.textAlign,
           inkColor: style.color,
-          // We can't easily infer bold/italic/underline/spacing from container style
-          // so we keep them as is or reset them. Keeping them is safer for UX.
+          isBold: style.fontWeight === 'bold',
+          isItalic: style.fontStyle === 'italic',
+          isUnderline: style.textDecorationLine?.includes('underline') ?? false,
         }));
       }
     }
@@ -423,6 +427,9 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
             fontSize: activeConfig.fontSize === 'small' ? 16 : activeConfig.fontSize === 'medium' ? 18 : 22,
             textAlign: activeConfig.textAlign,
             color: activeConfig.inkColor,
+            fontWeight: activeConfig.isBold ? 'bold' : 'normal',
+            fontStyle: activeConfig.isItalic ? 'italic' : 'normal',
+            textDecorationLine: activeConfig.isUnderline ? 'underline' : 'none',
           }
         };
 

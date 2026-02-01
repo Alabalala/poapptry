@@ -38,6 +38,9 @@ const RichTextBox = forwardRef<RichTextBoxRef, RichTextBoxProps>(({ textBox, onU
             fontSize: textBox.style.fontSize,
             textAlign: textBox.style.textAlign,
             color: textBox.style.color,
+            fontWeight: textBox.style.fontWeight,
+            fontStyle: textBox.style.fontStyle,
+            textDecorationLine: textBox.style.textDecorationLine,
           }
         ]}
         value={textBox.content.replace(/<[^>]*>/g, '')} // Strip HTML for native display
