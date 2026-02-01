@@ -1,6 +1,6 @@
 import { FONT_CAPABILITIES } from '@/constants/ThemeRegistry';
 import { LinearGradient } from 'expo-linear-gradient';
-import { AlignCenter, AlignLeft, AlignRight, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, AlignVerticalJustifyStart, Bold, Check, Italic, Underline } from 'lucide-react-native';
+import { AlignCenter, AlignLeft, AlignRight, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, AlignVerticalJustifyStart, Bold, Check, Italic, Plus, Underline } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { NativeScrollEvent, NativeSyntheticEvent, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -38,16 +38,55 @@ export default function FontToolbar({ visible, onClose }: { visible: boolean; on
           <Text style={styles.closeButton}>Done</Text>
         </TouchableOpacity>
       </View>
-      <FontPanelContent />
+      <FontPanelContent onClose={onClose} />
     </View>
   );
 }
 
-export function FontPanelContent({ scrollContentStyle }: { scrollContentStyle?: any }) {
-  const { activeConfig, updateConfig } = usePoem();
+export function FontPanelContent({ scrollContentStyle, onClose }: { scrollContentStyle?: any, onClose?: () => void }) {
+  const { activeConfig, updateConfig, addTextBox, pages, selectedTextBoxId, updateTextBox } = usePoem();
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
   const insets = useSafeAreaInsets(); // Only needed for gradient overlay
   const fontCaps = FONT_CAPABILITIES[activeConfig.fontId] || { supportsBold: false, supportsItalic: false };
+  const activePageId = pages[0]?.id || '1'; // Assuming single page or active page logic
+
+  // Helper to update either selected text box or global config
+  const handleUpdate = (updates: any) => {
+    if (selectedTextBoxId) {
+      // Special handling for Web rich text commands
+      if (Platform.OS === 'web') {
+        if (updates.isBold !== undefined) {
+          document.execCommand('bold');
+          // Don't return, also update config/style as fallback or state tracking
+        }
+        if (updates.isItalic !== undefined) {
+          document.execCommand('italic');
+        }
+        if (updates.isUnderline !== undefined) {
+          document.execCommand('underline');
+        }
+      }
+
+      // Map config updates to text box style updates
+      const styleUpdates: any = {};
+      if (updates.fontId) styleUpdates.fontFamily = updates.fontId;
+      if (updates.fontSize) {
+        styleUpdates.fontSize = updates.fontSize === 'small' ? 16 : updates.fontSize === 'medium' ? 18 : 22;
+      }
+      if (updates.textAlign) styleUpdates.textAlign = updates.textAlign;
+      if (updates.inkColor) styleUpdates.color = updates.inkColor;
+      // Bold/Italic/Underline are not yet in TextBox style properly (except rich text), 
+      // but for now let's assume we update the "default" style for the box
+      
+      if (Object.keys(styleUpdates).length > 0) {
+        updateTextBox(activePageId, selectedTextBoxId, { style: styleUpdates });
+      }
+      // Also update global config so next box matches
+      updateConfig(updates);
+    } else {
+      updateConfig(updates);
+    }
+  };
 
   // Calculate default padding if not provided
   const paddingBottom = scrollContentStyle?.paddingBottom ?? (Math.max(insets.bottom, 20) + 60);
@@ -57,6 +96,11 @@ export function FontPanelContent({ scrollContentStyle }: { scrollContentStyle?: 
     const paddingToBottom = 20;
     const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
     setIsScrolledToBottom(isCloseToBottom);
+  };
+
+  const handleAddTextBox = () => {
+    addTextBox(activePageId);
+    if (onClose) onClose();
   };
 
   return (
@@ -69,13 +113,24 @@ export function FontPanelContent({ scrollContentStyle }: { scrollContentStyle?: 
         scrollEventThrottle={16}
       >
         
+        {/* Actions */}
+        <View style={{ marginBottom: 20 }}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleAddTextBox}
+          >
+            <Plus size={20} color="#FFF" />
+            <Text style={styles.actionButtonText}>Add Text Box</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Font Family */}
         <SectionLabel label="Font" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
           {FONTS.map((font) => (
             <TouchableOpacity
               key={font}
-              onPress={() => updateConfig({ fontId: font })}
+              onPress={() => handleUpdate({ fontId: font })}
               style={[
                 styles.fontOption,
                 activeConfig.fontId === font && styles.activeOption
@@ -98,142 +153,148 @@ export function FontPanelContent({ scrollContentStyle }: { scrollContentStyle?: 
                   onPress={() => updateConfig({ fontSize: size })}
                   style={[
                     styles.groupButton,
-                    activeConfig.fontSize === size && styles.activeGroupButton
-                  ]}
-                >
-                  <Text style={[
-                    styles.groupButtonText, 
-                    activeConfig.fontSize === size && styles.activeGroupButtonText,
-                    { fontSize: size === 'small' ? 12 : size === 'medium' ? 16 : 20 }
-                  ]}>A</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-          
-          <View style={styles.halfCol}>
-            <SectionLabel label="Spacing" />
-            <View style={styles.buttonGroup}>
-              {[1.0, 1.5, 1.8].map((spacing) => (
-                <TouchableOpacity
-                  key={spacing}
-                  onPress={() => updateConfig({ lineSpacing: spacing })}
-                  style={[
-                    styles.groupButton,
-                    activeConfig.lineSpacing === spacing && styles.activeGroupButton
-                  ]}
-                >
-                  <Text style={[
-                    styles.groupButtonText,
-                    activeConfig.lineSpacing === spacing && styles.activeGroupButtonText
-                  ]}>{spacing === 1.0 ? '1.0' : spacing === 1.5 ? '1.5' : '2.0'}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </View>
-
-        {/* Alignment Horizontal & Vertical */}
-        <View style={styles.row}>
-          <View style={styles.halfCol}>
-            <SectionLabel label="Horizontal Align" />
-            <View style={styles.buttonGroup}>
-              <TouchableOpacity
-                onPress={() => updateConfig({ textAlign: 'left' })}
-                style={[styles.groupButton, activeConfig.textAlign === 'left' && styles.activeGroupButton]}
-              >
-                <AlignLeft size={18} color={activeConfig.textAlign === 'left' ? '#FFF' : '#374151'} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => updateConfig({ textAlign: 'center' })}
-                style={[styles.groupButton, activeConfig.textAlign === 'center' && styles.activeGroupButton]}
-              >
-                <AlignCenter size={18} color={activeConfig.textAlign === 'center' ? '#FFF' : '#374151'} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => updateConfig({ textAlign: 'right' })}
-                style={[styles.groupButton, activeConfig.textAlign === 'right' && styles.activeGroupButton]}
-              >
-                <AlignRight size={18} color={activeConfig.textAlign === 'right' ? '#FFF' : '#374151'} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.halfCol}>
-            <SectionLabel label="Vertical Align" />
-            <View style={styles.buttonGroup}>
-              <TouchableOpacity
-                onPress={() => updateConfig({ verticalAlign: 'top' })}
-                style={[styles.groupButton, activeConfig.verticalAlign === 'top' && styles.activeGroupButton]}
-              >
-                <AlignVerticalJustifyStart size={18} color={activeConfig.verticalAlign === 'top' ? '#FFF' : '#374151'} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => updateConfig({ verticalAlign: 'center' })}
-                style={[styles.groupButton, activeConfig.verticalAlign === 'center' && styles.activeGroupButton]}
-              >
-                <AlignVerticalJustifyCenter size={18} color={activeConfig.verticalAlign === 'center' ? '#FFF' : '#374151'} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => updateConfig({ verticalAlign: 'bottom' })}
-                style={[styles.groupButton, activeConfig.verticalAlign === 'bottom' && styles.activeGroupButton]}
-              >
-                <AlignVerticalJustifyEnd size={18} color={activeConfig.verticalAlign === 'bottom' ? '#FFF' : '#374151'} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        {/* Style */}
-        <SectionLabel label="Style" />
-        <View style={[styles.buttonGroup, { marginBottom: 20 }]}>
-          {fontCaps.supportsBold && (
-            <TouchableOpacity
-              onPress={() => updateConfig({ isBold: !activeConfig.isBold })}
-              style={[styles.groupButton, activeConfig.isBold && styles.activeGroupButton]}
+                activeConfig.fontSize === size && styles.activeGroupButton
+              ]}
             >
-              <Bold size={18} color={activeConfig.isBold ? '#FFF' : '#374151'} />
+              <Text style={[
+                styles.groupButtonText, 
+                activeConfig.fontSize === size && styles.activeGroupButtonText,
+                { fontSize: size === 'small' ? 12 : size === 'medium' ? 16 : 20 }
+              ]}>A</Text>
             </TouchableOpacity>
-          )}
-          {fontCaps.supportsItalic && (
+          ))}
+        </View>
+      </View>
+      
+      <View style={styles.halfCol}>
+        <SectionLabel label="Spacing" />
+        <View style={styles.buttonGroup}>
+          {[1.0, 1.5, 1.8].map((spacing) => (
             <TouchableOpacity
-              onPress={() => updateConfig({ isItalic: !activeConfig.isItalic })}
-              style={[styles.groupButton, activeConfig.isItalic && styles.activeGroupButton]}
+              key={spacing}
+              onPress={() => handleUpdate({ lineSpacing: spacing })}
+              style={[
+                styles.groupButton,
+                activeConfig.lineSpacing === spacing && styles.activeGroupButton
+              ]}
             >
-              <Italic size={18} color={activeConfig.isItalic ? '#FFF' : '#374151'} />
+              <Text style={[
+                styles.groupButtonText,
+                activeConfig.lineSpacing === spacing && styles.activeGroupButtonText
+              ]}>{spacing === 1.0 ? '1.0' : spacing === 1.5 ? '1.5' : '2.0'}</Text>
             </TouchableOpacity>
-          )}
+          ))}
+        </View>
+      </View>
+    </View>
+
+    {/* Alignment Horizontal & Vertical */}
+    <View style={styles.row}>
+      <View style={styles.halfCol}>
+        <SectionLabel label="Horizontal Align" />
+        <View style={styles.buttonGroup}>
           <TouchableOpacity
-            onPress={() => updateConfig({ isUnderline: !activeConfig.isUnderline })}
-            style={[styles.groupButton, activeConfig.isUnderline && styles.activeGroupButton]}
+            onPress={() => handleUpdate({ textAlign: 'left' })}
+            style={[styles.groupButton, activeConfig.textAlign === 'left' && styles.activeGroupButton]}
           >
-            <Underline size={18} color={activeConfig.isUnderline ? '#FFF' : '#374151'} />
+            <AlignLeft size={18} color={activeConfig.textAlign === 'left' ? '#FFF' : '#374151'} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleUpdate({ textAlign: 'center' })}
+            style={[styles.groupButton, activeConfig.textAlign === 'center' && styles.activeGroupButton]}
+          >
+            <AlignCenter size={18} color={activeConfig.textAlign === 'center' ? '#FFF' : '#374151'} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleUpdate({ textAlign: 'right' })}
+            style={[styles.groupButton, activeConfig.textAlign === 'right' && styles.activeGroupButton]}
+          >
+            <AlignRight size={18} color={activeConfig.textAlign === 'right' ? '#FFF' : '#374151'} />
           </TouchableOpacity>
         </View>
+      </View>
 
-        {/* Colors */}
-        <SectionLabel label="Color" />
-        <View style={styles.colorRow}>
-          {COLORS.map((color) => {
-            const isLight = ['#FFFFFF', '#FEF3C7', '#33FF33'].includes(color);
-            return (
-              <TouchableOpacity
-                key={color}
-                onPress={() => updateConfig({ inkColor: color })}
-                style={[
-                  styles.colorCircle,
-                  { backgroundColor: color },
-                  color === '#FFFFFF' && { borderWidth: 1, borderColor: '#E5E7EB' },
-                  activeConfig.inkColor === color && styles.activeColorCircle
-                ]}
-              >
-                {activeConfig.inkColor === color && (
-                  <Check size={16} color={isLight ? '#000' : '#FFF'} />
-                )}
-              </TouchableOpacity>
-            );
-          })}
+      <View style={styles.halfCol}>
+        <SectionLabel label="Vertical Align" />
+        <View style={styles.buttonGroup}>
+          <TouchableOpacity
+            onPress={() => handleUpdate({ verticalAlign: 'top' })}
+            style={[styles.groupButton, activeConfig.verticalAlign === 'top' && styles.activeGroupButton]}
+          >
+            <AlignVerticalJustifyStart size={18} color={activeConfig.verticalAlign === 'top' ? '#FFF' : '#374151'} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleUpdate({ verticalAlign: 'center' })}
+            style={[styles.groupButton, activeConfig.verticalAlign === 'center' && styles.activeGroupButton]}
+          >
+            <AlignVerticalJustifyCenter size={18} color={activeConfig.verticalAlign === 'center' ? '#FFF' : '#374151'} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleUpdate({ verticalAlign: 'bottom' })}
+            style={[styles.groupButton, activeConfig.verticalAlign === 'bottom' && styles.activeGroupButton]}
+          >
+            <AlignVerticalJustifyEnd size={18} color={activeConfig.verticalAlign === 'bottom' ? '#FFF' : '#374151'} />
+          </TouchableOpacity>
         </View>
+      </View>
+    </View>
+
+    {/* Style */}
+    <SectionLabel label="Style" />
+    <View style={[styles.buttonGroup, { marginBottom: 20 }]}>
+      {fontCaps.supportsBold && (
+        <TouchableOpacity
+          onPress={() => handleUpdate({ isBold: !activeConfig.isBold })}
+          // @ts-ignore - Web specific prop
+          onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
+          style={[styles.groupButton, activeConfig.isBold && styles.activeGroupButton]}
+        >
+          <Bold size={18} color={activeConfig.isBold ? '#FFF' : '#374151'} />
+        </TouchableOpacity>
+      )}
+      {fontCaps.supportsItalic && (
+        <TouchableOpacity
+          onPress={() => handleUpdate({ isItalic: !activeConfig.isItalic })}
+          // @ts-ignore - Web specific prop
+          onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
+          style={[styles.groupButton, activeConfig.isItalic && styles.activeGroupButton]}
+        >
+          <Italic size={18} color={activeConfig.isItalic ? '#FFF' : '#374151'} />
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity
+        onPress={() => handleUpdate({ isUnderline: !activeConfig.isUnderline })}
+        // @ts-ignore - Web specific prop
+        onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
+        style={[styles.groupButton, activeConfig.isUnderline && styles.activeGroupButton]}
+      >
+        <Underline size={18} color={activeConfig.isUnderline ? '#FFF' : '#374151'} />
+      </TouchableOpacity>
+    </View>
+
+    {/* Colors */}
+    <SectionLabel label="Color" />
+    <View style={styles.colorRow}>
+      {COLORS.map((color) => {
+        const isLight = ['#FFFFFF', '#FEF3C7', '#33FF33'].includes(color);
+        return (
+          <TouchableOpacity
+            key={color}
+            onPress={() => handleUpdate({ inkColor: color })}
+            style={[
+              styles.colorCircle,
+              { backgroundColor: color },
+              color === '#FFFFFF' && { borderWidth: 1, borderColor: '#E5E7EB' },
+              activeConfig.inkColor === color && styles.activeColorCircle
+            ]}
+          >
+            {activeConfig.inkColor === color && (
+              <Check size={16} color={isLight ? '#000' : '#FFF'} />
+            )}
+          </TouchableOpacity>
+        );
+      })}
+    </View>
       </ScrollView>
 
       {!isScrolledToBottom && (
@@ -396,5 +457,20 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 30,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#3B82F6',
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+    marginBottom: 8,
+  },
+  actionButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 16,
   },
 });

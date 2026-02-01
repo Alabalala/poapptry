@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Platform, StyleSheet, Text, View } from 'react-native';
+import { Animated, Platform, StyleSheet, Text } from 'react-native';
 
 export interface ToastProps {
   message: string;
-  type?: 'success' | 'error' | 'info';
+  type?: 'success' | 'error' | 'info' | 'warning';
   onHide: () => void;
   duration?: number;
 }
@@ -46,6 +46,7 @@ export default function Toast({ message, type = 'info', onHide, duration = 3000 
   const backgroundColor = 
     type === 'error' ? '#EF4444' : 
     type === 'success' ? '#10B981' : 
+    type === 'warning' ? '#F59E0B' :
     '#3B82F6';
 
   return (

@@ -8,17 +8,19 @@ import StationeryToolbar from './StationeryToolbar';
 
 interface BottomToolbarProps {
   onOpenDrawer: () => void;
+  activeToolbar: 'none' | 'font' | 'stationery';
+  setActiveToolbar: (toolbar: 'none' | 'font' | 'stationery') => void;
+  isLargeScreen?: boolean;
 }
 
-export default function BottomToolbar({ onOpenDrawer, isLargeScreen }: BottomToolbarProps & { isLargeScreen?: boolean }) {
+export default function BottomToolbar({ onOpenDrawer, activeToolbar, setActiveToolbar, isLargeScreen }: BottomToolbarProps) {
   const { isEditing } = usePoem();
   const insets = useSafeAreaInsets();
-  const [activeToolbar, setActiveToolbar] = useState<'none' | 'font' | 'stationery'>('none');
 
   if (!isEditing || isLargeScreen) return null;
 
   const toggleToolbar = (toolbar: 'font' | 'stationery') => {
-    setActiveToolbar(current => current === toolbar ? 'none' : toolbar);
+    setActiveToolbar(activeToolbar === toolbar ? 'none' : toolbar);
   };
 
   return (

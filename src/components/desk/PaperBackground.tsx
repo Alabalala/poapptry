@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { Image, LayoutChangeEvent, Platform, StyleSheet, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
+import { Image, LayoutChangeEvent, Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { PAPERS } from '../../constants/ThemeRegistry';
 import { usePoem } from '../../context/PoemContext';
 import DraggableDecoration from './DraggableDecoration';
 
 interface PaperBackgroundProps {
   children: React.ReactNode;
+  availableWidth?: number;
+  onSizeChange?: (width: number, height: number) => void;
 }
 
-export default function PaperBackground({ children, availableWidth }: PaperBackgroundProps & { availableWidth?: number }) {
+export default function PaperBackground({ children, availableWidth, onSizeChange }: PaperBackgroundProps) {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const effectiveWidth = availableWidth ?? windowWidth;
   const { 
@@ -50,6 +52,7 @@ export default function PaperBackground({ children, availableWidth }: PaperBackg
     
     containerRef.current?.measure((x, y, w, h, pageX, pageY) => {
       setPaperBounds({ x: pageX, y: pageY, width: w || width, height: h || height });
+      onSizeChange?.(w || width, h || height);
     });
   };
 
@@ -57,8 +60,7 @@ export default function PaperBackground({ children, availableWidth }: PaperBackg
   const paperSource = PAPERS[activeConfig.paperId as keyof typeof PAPERS] || PAPERS.paper_classic;
 
   return (
-    <TouchableWithoutFeedback onPress={() => setSelectedDecorationId(null)}>
-      <View style={styles.container}>
+    <View style={styles.container}>
         <View style={[styles.stackLayer, { width: paperWidth, height: paperHeight, transform: [{ rotate: '-1.5deg' }] }]} />
         <View style={[styles.stackLayer, { width: paperWidth, height: paperHeight, transform: [{ rotate: '1deg' }] }]} />
 
@@ -137,7 +139,6 @@ export default function PaperBackground({ children, availableWidth }: PaperBackg
           </View>
         </View>
       </View>
-    </TouchableWithoutFeedback>
   );
 }
 

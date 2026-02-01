@@ -18,13 +18,13 @@
   - `title`: string
   - `pages`: Array<{
       `id`: string,
-      `content`: string
+      `textBoxes`: Array<TextBox>
     }>
   - `authorUid`: string | null (null for guest)
   - `createdAt`: number
   - `isPublic`: boolean (Default: false)
   
-  // The "Vibe" Configuration
+  // The "Vibe" Configuration (Defaults for new elements)
   - `config`: {
       `presetId`: string,
       `paperId`: string,
@@ -32,11 +32,7 @@
       `inkColor`: string,
       `fontSize`: 'small' | 'medium' | 'large',
       `textAlign`: 'left' | 'center' | 'right',
-      `verticalAlign`: 'top' | 'center' | 'bottom',
       `lineSpacing`: number,
-      `isBold`: boolean,
-      `isItalic`: boolean,
-      `isUnderline`: boolean
     }
 
   // Free-floating Decorations (All interactive: Drag, Select, Delete)
@@ -55,6 +51,24 @@
       `scale`: number,    // 0.5 to 2.0
       `opacity`: number   // 0.3 to 1.0
     }
+
+  // TextBox Interface
+  interface TextBox {
+    `id`: string,
+    `content`: string, // Rich Text (HTML)
+    `x`: number,
+    `y`: number,
+    `width`: number,
+    `height`: number,
+    `rotation`: number,
+    `zIndex`: number,
+    `style`: {
+       `fontFamily`: string,
+       `fontSize`: number,
+       `textAlign`: 'left' | 'center' | 'right',
+       `color`: string,
+    }
+  }
 
 ## 4. User Flow (The "Desk" Concept)
 
@@ -94,52 +108,20 @@ graph TD
     end
 ```
 
-## 5. Technical Constraints & Fixes
+## 5. Text Box System
 
-### Text Input Sizing vs. Alignment (React Native Web)
-**Problem:** 
-On React Native Web, `TextInput` (mapped to HTML `textarea`) has conflicting behaviors:
-1.  **Full Page Clickability:** Requires the input to fill the container (`minHeight: 100%`).
-2.  **Vertical Alignment:** Standard CSS vertical alignment (e.g., `justify-content`) breaks when the `textarea` is forced to 100% height. It fills the space, making "centering" irrelevant in Flexbox terms because the child is as big as the parent.
+**Core Change:** 
+Instead of a single full-page text area, the app now uses movable, resizable text boxes.
 
-**Solution (The "Ghost Text" Pattern):**
-We use a platform-specific approach to achieve both full-page clickability and correct vertical alignment.
+**Constraints:**
+1.  **Max Text Boxes:** 3 per page.
+2.  **Word Limit:** 300 words per text box.
+3.  **Rich Text (Web Only):** Users can apply Bold, Italic, and Underline to specific words. Native uses plain text for now.
 
-- **Native (iOS/Android):** 
-  - Simply uses `textAlignVertical: 'top' | 'center' | 'bottom'`. This is a native prop that works perfectly with `minHeight: '100%'`.
-
-- **Web:**
-  - **Full Height:** The `TextInput` is given `minHeight: '100%'` so clicks anywhere on the page focus the input immediately.
-  - **Ghost Measurement:** We render a hidden `<Text>` component ("Ghost Text") that mirrors the input's content, font, width, and line height. This element is `position: absolute` and `opacity: 0`.
-  - **Dynamic Padding:** We measure the height of the Ghost Text via `onLayout`. We then calculate the `paddingTop` needed to simulate vertical alignment:
-    - **Top:** `0`
-    - **Center:** `(PaperHeight - TextHeight) / 2`
-    - **Bottom:** `PaperHeight - TextHeight`
-
-**Code Example:**
-```tsx
-// 1. Ghost Text (Web Only)
-{isWeb && (
-  <Text
-    style={[textStyle, { position: 'absolute', opacity: 0 }]}
-    onLayout={(e) => {
-      const h = e.nativeEvent.layout.height;
-      // Calculate padding based on paperHeight and this text height
-      setPaddingTop(calculateWebPadding(h, paperHeight));
-    }}
-  >
-    {content}
-  </Text>
-)}
-
-// 2. Main Input
-<TextInput
-  style={{
-    minHeight: '100%', // Fills page
-    paddingTop: isWeb ? paddingTop : 0, // Simulated alignment
-    textAlignVertical: isWeb ? 'top' : activeConfig.verticalAlign // Native alignment
-  }}
-/>
-```
+**Implementation Details:**
+-   **Web:** Uses `contentEditable` div for rich text capabilities.
+-   **Native:** Uses `TextInput` with plain text fallback.
+-   **Drag & Drop:** Text boxes can be dragged and resized using a wrapper component (`DraggableTextBox`).
+-   **Styling:** Font family, size, color, and alignment can be applied per text box.
 
 ## 6. Future Considerations

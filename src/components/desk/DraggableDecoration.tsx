@@ -104,9 +104,18 @@ export default function DraggableDecoration({
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => isEditing,
-      onMoveShouldSetPanResponder: () => isEditing,
-      onPanResponderGrant: () => {
+      onStartShouldSetPanResponder: (e) => {
+        if (!isEditing) return false;
+        e.stopPropagation?.();
+        return true;
+      },
+      onMoveShouldSetPanResponder: (e) => {
+        if (!isEditing) return false;
+        e.stopPropagation?.();
+        return true;
+      },
+      onPanResponderGrant: (e) => {
+        e.stopPropagation?.();
         isDragging.current = true;
         onSelect(decoration.id);
         

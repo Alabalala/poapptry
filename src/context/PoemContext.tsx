@@ -39,9 +39,26 @@ export type FixedDecorations = {
   bookmarkSide: 'left' | 'right';
 };
 
+export interface TextBox {
+  id: string;
+  content: string; // HTML or specific format
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  zIndex: number;
+  style: {
+    fontFamily: string;
+    fontSize: number;
+    textAlign: 'left' | 'center' | 'right';
+    color: string;
+  }
+}
+
 export interface Page {
   id: string;
-  content: string;
+  textBoxes: TextBox[];
 }
 
 interface PoemContextType {
@@ -55,6 +72,7 @@ interface PoemContextType {
   washiTapes: Decoration[];
   bookmarks: Decoration[];
   selectedDecorationId: string | null;
+  selectedTextBoxId: string | null;
 
   pages: Page[];
   toggleEditMode: () => void;
@@ -66,14 +84,19 @@ interface PoemContextType {
   addStamp: (assetId: string, position?: { x: number; y: number }) => boolean;
   addWashi: (assetId: string, position?: { x: number; y: number }) => boolean;
   addBookmark: (assetId: string, position?: { x: number; y: number }) => boolean;
+  addTextBox: (pageId: string, initialContent?: string) => boolean;
   
   updateDecoration: (id: string, updates: Partial<Decoration>) => void;
   removeDecoration: (id: string) => void;
+  duplicateTextBox: (pageId: string, textBoxId: string) => void;
+  updateTextBox: (pageId: string, textBoxId: string, updates: Partial<TextBox>) => void;
+  removeTextBox: (pageId: string, textBoxId: string) => void;
   removeAllDecorations: () => void;
   resetPoem: () => void;
   createNewPoem: () => void;
   loadPoem: (poem: any) => void;
   setSelectedDecorationId: (id: string | null) => void;
+  setSelectedTextBoxId: (id: string | null) => void;
   
   // Legacy aliases
   setStamps: (stamps: Stamp[]) => void;
@@ -82,7 +105,8 @@ interface PoemContextType {
   updateStamp: (id: string, updates: Partial<Stamp>) => void;
   removeStamp: (id: string) => void;
 
-  updatePageContent: (id: string, content: string) => void;
+  // Legacy page content updater (mapped to first textbox or removed?)
+  // updatePageContent: (id: string, content: string) => void; 
   
   // Drag and Drop Support
   draggedStamp: { assetId: string; x: number; y: number; type?: 'stamp' | 'washi' | 'bookmark' } | null;
@@ -110,7 +134,7 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
   const [poemId, setPoemId] = useState<string>(Math.random().toString(36).substr(2, 9));
   const [createdAt, setCreatedAt] = useState<number>(Date.now());
   const [title, setTitle] = useState('Untitled Poem');
-  const [pages, setPages] = useState<Page[]>([{ id: '1', content: '' }]);
+  const [pages, setPages] = useState<Page[]>([{ id: '1', textBoxes: [] }]);
   const [activeConfig, setActiveConfig] = useState<PoemConfig>({
     presetId: 'classic',
     paperId: 'paper_classic',
@@ -129,6 +153,7 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
   const [washiTapes, setWashiTapes] = useState<Decoration[]>([]);
   const [bookmarks, setBookmarks] = useState<Decoration[]>([]);
   const [selectedDecorationId, setSelectedDecorationId] = useState<string | null>(null);
+  const [selectedTextBoxId, setSelectedTextBoxId] = useState<string | null>(null);
   
   // Drag and Drop State
   const [draggedStamp, setDraggedStamp] = useState<{ assetId: string; x: number; y: number; type?: 'stamp' | 'washi' | 'bookmark' } | null>(null);
@@ -181,7 +206,39 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
           if (savedPoem.id) setPoemId(savedPoem.id);
           if (savedPoem.createdAt) setCreatedAt(savedPoem.createdAt);
           if (savedPoem.title) setTitle(savedPoem.title);
-          if (savedPoem.pages) setPages(savedPoem.pages);
+          if (savedPoem.pages) {
+            // Migrate pages to ensure textBoxes exist
+            const migratedPages = savedPoem.pages.map((p: any) => {
+              if (p.textBoxes) return p;
+              
+              // If old format with content string, convert to first text box
+              if (p.content) {
+                return {
+                  ...p,
+                  textBoxes: [{
+                    id: Math.random().toString(36).substr(2, 9),
+                    content: p.content,
+                    x: 40,
+                    y: 40,
+                    width: 300,
+                    height: 200,
+                    rotation: 0,
+                    zIndex: 1,
+                    style: {
+                      fontFamily: savedPoem.activeConfig?.fontId || 'Crimson Text',
+                      fontSize: savedPoem.activeConfig?.fontSize === 'small' ? 16 : savedPoem.activeConfig?.fontSize === 'large' ? 22 : 18,
+                      textAlign: savedPoem.activeConfig?.textAlign || 'left',
+                      color: savedPoem.activeConfig?.inkColor || '#000000',
+                    }
+                  }]
+                };
+              }
+              
+              // If neither, just return empty textBoxes
+              return { ...p, textBoxes: [] };
+            });
+            setPages(migratedPages);
+          }
           if (savedPoem.activeConfig) setActiveConfig(savedPoem.activeConfig);
           
           // Migrate old stamps or load new
@@ -319,6 +376,122 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
     return true;
   };
 
+  const addTextBox = (pageId: string, initialContent: string = '') => {
+    // Generate ID first so we can select it
+    const newId = Math.random().toString(36).substr(2, 9);
+    
+    setPages((prevPages) => {
+      return prevPages.map(page => {
+        if (page.id !== pageId) return page;
+
+        if (page.textBoxes.length >= 3) {
+          showToast('You can only add up to 3 text boxes per page.', 'info');
+          return page;
+        }
+
+        const newTextBox: TextBox = {
+          id: newId,
+          content: initialContent,
+          x: 40, // Increased padding to be more visible
+          y: 40,
+          width: 200, // Smaller initial width for "Type here" feel
+          height: 50, // Initial height, will grow
+          rotation: 0,
+          zIndex: page.textBoxes.length + 1,
+          style: {
+            fontFamily: activeConfig.fontId,
+            fontSize: activeConfig.fontSize === 'small' ? 16 : activeConfig.fontSize === 'medium' ? 18 : 22,
+            textAlign: activeConfig.textAlign,
+            color: activeConfig.inkColor,
+          }
+        };
+
+        return {
+          ...page,
+          textBoxes: [...page.textBoxes, newTextBox]
+        };
+      });
+    });
+    
+    // Select the new text box immediately
+    setSelectedTextBoxId(newId);
+    setSelectedDecorationId(null);
+    
+    return true;
+  };
+
+  const duplicateTextBox = (pageId: string, textBoxId: string) => {
+    let newId = Math.random().toString(36).substr(2, 9);
+    
+    setPages((prevPages) => {
+      const page = prevPages.find(p => p.id === pageId);
+      if (!page) return prevPages;
+
+      if (page.textBoxes.length >= 3) {
+        showToast('You can only add up to 3 text boxes per page.', 'info');
+        return prevPages;
+      }
+
+      const originalBox = page.textBoxes.find(t => t.id === textBoxId);
+      if (!originalBox) return prevPages;
+
+      const newTextBox: TextBox = {
+        ...originalBox,
+        id: newId,
+        x: originalBox.x + 20,
+        y: originalBox.y + 20,
+        zIndex: page.textBoxes.length + 1,
+      };
+
+      return prevPages.map(p => {
+        if (p.id !== pageId) return p;
+        return {
+          ...p,
+          textBoxes: [...p.textBoxes, newTextBox]
+        };
+      });
+    });
+
+    setSelectedTextBoxId(newId);
+    setSelectedDecorationId(null);
+  };
+
+  const countWords = (str: string) => {
+    // Strip HTML tags
+    const text = str.replace(/<[^>]*>?/gm, '');
+    // Split by whitespace and filter empty strings
+    return text.trim().split(/\s+/).filter(w => w.length > 0).length;
+  };
+
+  const updateTextBox = (pageId: string, textBoxId: string, updates: Partial<TextBox>) => {
+    // Check word count limit
+    if (updates.content !== undefined) {
+      const currentWordCount = countWords(updates.content);
+      if (currentWordCount > 300) {
+        showToast('Text box limit is 300 words.', 'warning');
+        return; // Block update
+      }
+    }
+
+    setPages(prev => prev.map(page => {
+      if (page.id !== pageId) return page;
+      return {
+        ...page,
+        textBoxes: page.textBoxes.map(box => box.id === textBoxId ? { ...box, ...updates } : box)
+      };
+    }));
+  };
+
+  const removeTextBox = (pageId: string, textBoxId: string) => {
+    setPages(prev => prev.map(page => {
+      if (page.id !== pageId) return page;
+      return {
+        ...page,
+        textBoxes: page.textBoxes.filter(box => box.id !== textBoxId)
+      };
+    }));
+  };
+
   const updateDecoration = (id: string, updates: Partial<Decoration>) => {
     // Try to update in all lists (only one will match)
     setStamps((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
@@ -341,7 +514,7 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const resetPoem = () => {
-    const defaultPages = [{ id: '1', content: '' }];
+    const defaultPages = [{ id: '1', textBoxes: [] }];
     const defaultTitle = 'Untitled Poem';
     
     // We keep the ID for reset to avoid creating a new document if it's the same poem
@@ -354,7 +527,7 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
     setPoemId(Math.random().toString(36).substr(2, 9));
     setCreatedAt(Date.now());
     setTitle('Untitled Poem');
-    setPages([{ id: '1', content: '' }]);
+    setPages([{ id: '1', textBoxes: [] }]);
     setStamps([]);
     setWashiTapes([]);
     setBookmarks([]);
@@ -380,10 +553,6 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
   const removeStamp = removeDecoration;
   const setSelectedStampId = setSelectedDecorationId;
 
-  const updatePageContent = (id: string, content: string) => {
-    setPages((prev) => prev.map((p) => (p.id === id ? { ...p, content } : p)));
-  };
-
   return (
     <PoemContext.Provider
       value={{
@@ -395,6 +564,7 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
         washiTapes,
         bookmarks,
         selectedDecorationId,
+        selectedTextBoxId,
         selectedStampId: selectedDecorationId,
         pages,
         toggleEditMode,
@@ -403,19 +573,23 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
         updateConfig,
         setStamps, // Legacy
         setSelectedDecorationId,
+        setSelectedTextBoxId,
         setSelectedStampId,
         addStamp,
         addWashi,
         addBookmark,
+        addTextBox,
         updateDecoration,
         updateStamp,
+        duplicateTextBox,
+        updateTextBox,
         removeDecoration,
+        removeTextBox,
         removeAllDecorations,
         resetPoem,
         createNewPoem,
         loadPoem,
         removeStamp,
-        updatePageContent,
         draggedStamp,
         setDraggedStamp,
         paperBounds,
