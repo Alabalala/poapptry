@@ -167,6 +167,26 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
     scrollYRef.current = y;
   };
 
+  useEffect(() => {
+    if (selectedTextBoxId) {
+      const page = pages.find(p => p.textBoxes.some(t => t.id === selectedTextBoxId));
+      const textBox = page?.textBoxes.find(t => t.id === selectedTextBoxId);
+      
+      if (textBox) {
+        const { style } = textBox;
+        setActiveConfig(prev => ({
+          ...prev,
+          fontId: style.fontFamily,
+          fontSize: style.fontSize === 16 ? 'small' : style.fontSize === 22 ? 'large' : 'medium',
+          textAlign: style.textAlign,
+          inkColor: style.color,
+          // We can't easily infer bold/italic/underline/spacing from container style
+          // so we keep them as is or reset them. Keeping them is safer for UX.
+        }));
+      }
+    }
+  }, [selectedTextBoxId, pages]);
+
   const setPaperBounds = (bounds: { x: number; y: number; width: number; height: number } | null) => {
     if (bounds) {
       measuredBoundsRef.current = {

@@ -55,15 +55,22 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
     if (selectedTextBoxId) {
       // Special handling for Web rich text commands
       if (Platform.OS === 'web') {
-        if (updates.isBold !== undefined) {
-          document.execCommand('bold');
-          // Don't return, also update config/style as fallback or state tracking
+        if (updates.isBold !== undefined) document.execCommand('bold');
+        if (updates.isItalic !== undefined) document.execCommand('italic');
+        if (updates.isUnderline !== undefined) document.execCommand('underline');
+        
+        // Partial styling support
+        if (updates.fontId) document.execCommand('fontName', false, updates.fontId);
+        if (updates.inkColor) document.execCommand('foreColor', false, updates.inkColor);
+        if (updates.textAlign) {
+           const align = updates.textAlign === 'left' ? 'justifyLeft' : updates.textAlign === 'center' ? 'justifyCenter' : 'justifyRight';
+           document.execCommand(align);
         }
-        if (updates.isItalic !== undefined) {
-          document.execCommand('italic');
-        }
-        if (updates.isUnderline !== undefined) {
-          document.execCommand('underline');
+        if (updates.fontSize) {
+           // Map to 1-7 scale for execCommand (approximate mapping)
+           // 1: 10px, 2: 13px, 3: 16px, 4: 18px, 5: 24px, 6: 32px, 7: 48px
+           const size = updates.fontSize === 'small' ? '3' : updates.fontSize === 'medium' ? '4' : '6';
+           document.execCommand('fontSize', false, size);
         }
       }
 
@@ -131,6 +138,8 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
             <TouchableOpacity
               key={font}
               onPress={() => handleUpdate({ fontId: font })}
+              // @ts-ignore - Web specific prop
+              onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
               style={[
                 styles.fontOption,
                 activeConfig.fontId === font && styles.activeOption
@@ -150,7 +159,9 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
               {(['small', 'medium', 'large'] as const).map((size) => (
                 <TouchableOpacity
                   key={size}
-                  onPress={() => updateConfig({ fontSize: size })}
+                  onPress={() => handleUpdate({ fontSize: size })}
+                  // @ts-ignore - Web specific prop
+                  onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
                   style={[
                     styles.groupButton,
                 activeConfig.fontSize === size && styles.activeGroupButton
@@ -173,6 +184,8 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
             <TouchableOpacity
               key={spacing}
               onPress={() => handleUpdate({ lineSpacing: spacing })}
+              // @ts-ignore - Web specific prop
+              onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
               style={[
                 styles.groupButton,
                 activeConfig.lineSpacing === spacing && styles.activeGroupButton
@@ -195,18 +208,24 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
         <View style={styles.buttonGroup}>
           <TouchableOpacity
             onPress={() => handleUpdate({ textAlign: 'left' })}
+            // @ts-ignore - Web specific prop
+            onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
             style={[styles.groupButton, activeConfig.textAlign === 'left' && styles.activeGroupButton]}
           >
             <AlignLeft size={18} color={activeConfig.textAlign === 'left' ? '#FFF' : '#374151'} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => handleUpdate({ textAlign: 'center' })}
+            // @ts-ignore - Web specific prop
+            onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
             style={[styles.groupButton, activeConfig.textAlign === 'center' && styles.activeGroupButton]}
           >
             <AlignCenter size={18} color={activeConfig.textAlign === 'center' ? '#FFF' : '#374151'} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => handleUpdate({ textAlign: 'right' })}
+            // @ts-ignore - Web specific prop
+            onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
             style={[styles.groupButton, activeConfig.textAlign === 'right' && styles.activeGroupButton]}
           >
             <AlignRight size={18} color={activeConfig.textAlign === 'right' ? '#FFF' : '#374151'} />
@@ -219,18 +238,24 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
         <View style={styles.buttonGroup}>
           <TouchableOpacity
             onPress={() => handleUpdate({ verticalAlign: 'top' })}
+            // @ts-ignore - Web specific prop
+            onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
             style={[styles.groupButton, activeConfig.verticalAlign === 'top' && styles.activeGroupButton]}
           >
             <AlignVerticalJustifyStart size={18} color={activeConfig.verticalAlign === 'top' ? '#FFF' : '#374151'} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => handleUpdate({ verticalAlign: 'center' })}
+            // @ts-ignore - Web specific prop
+            onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
             style={[styles.groupButton, activeConfig.verticalAlign === 'center' && styles.activeGroupButton]}
           >
             <AlignVerticalJustifyCenter size={18} color={activeConfig.verticalAlign === 'center' ? '#FFF' : '#374151'} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => handleUpdate({ verticalAlign: 'bottom' })}
+            // @ts-ignore - Web specific prop
+            onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
             style={[styles.groupButton, activeConfig.verticalAlign === 'bottom' && styles.activeGroupButton]}
           >
             <AlignVerticalJustifyEnd size={18} color={activeConfig.verticalAlign === 'bottom' ? '#FFF' : '#374151'} />
@@ -281,6 +306,8 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
           <TouchableOpacity
             key={color}
             onPress={() => handleUpdate({ inkColor: color })}
+            // @ts-ignore - Web specific prop
+            onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
             style={[
               styles.colorCircle,
               { backgroundColor: color },
