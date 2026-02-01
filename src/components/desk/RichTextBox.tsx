@@ -1,6 +1,6 @@
 import { TextBox } from '@/context/PoemContext';
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 
 interface RichTextBoxProps {
   textBox: TextBox;
@@ -65,9 +65,6 @@ const RichTextBox = forwardRef<RichTextBoxRef, RichTextBoxProps>(({ textBox, onU
         placeholder={isEditing ? "Write here..." : ""}
         placeholderTextColor="rgba(0,0,0,0.3)"
       />
-      {isEditing && (
-        <Text style={styles.hint}>Rich text editing is available on Web</Text>
-      )}
     </View>
   );
 });
