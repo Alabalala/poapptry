@@ -156,8 +156,23 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
   const [stamps, setStamps] = useState<Decoration[]>([]);
   const [washiTapes, setWashiTapes] = useState<Decoration[]>([]);
   const [bookmarks, setBookmarks] = useState<Decoration[]>([]);
-  const [selectedDecorationId, setSelectedDecorationId] = useState<string | null>(null);
-  const [selectedTextBoxId, setSelectedTextBoxId] = useState<string | null>(null);
+  const [selectedDecorationId, setSelectedDecorationIdState] = useState<string | null>(null);
+  const [selectedTextBoxId, setSelectedTextBoxIdState] = useState<string | null>(null);
+  
+  // Wrappers to enforce single selection rule (mutually exclusive)
+  const setSelectedDecorationId = (id: string | null) => {
+    setSelectedDecorationIdState(id);
+    if (id) {
+      setSelectedTextBoxIdState(null);
+    }
+  };
+
+  const setSelectedTextBoxId = (id: string | null) => {
+    setSelectedTextBoxIdState(id);
+    if (id) {
+      setSelectedDecorationIdState(null);
+    }
+  };
   
   // Drag and Drop State
   const [draggedStamp, setDraggedStamp] = useState<{ assetId: string; x: number; y: number; type?: 'stamp' | 'washi' | 'bookmark' } | null>(null);
