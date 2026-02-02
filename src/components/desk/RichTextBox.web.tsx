@@ -63,6 +63,7 @@ const RichTextBox = forwardRef<RichTextBoxRef, RichTextBoxProps>(({ textBox, onU
           outline: 'none',
           overflow: 'auto',
           padding: `${8 * scale}px`,
+          boxSizing: 'border-box',
           fontFamily: textBox.style.fontFamily,
           fontSize: `${textBox.style.fontSize * scale}px`,
           lineHeight: textBox.style.lineHeight ? `${textBox.style.lineHeight * scale}px` : undefined,

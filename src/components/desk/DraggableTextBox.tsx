@@ -287,14 +287,18 @@ export default function DraggableTextBox({
           left: localLayout.x,
           top: localLayout.y,
           width: localLayout.width,
-          minHeight: localLayout.height,
+          // Lock height during drag to prevent resizing/jumping
+          height: isDragging ? (actualSizeRef.current.height || localLayout.height) : undefined,
+          minHeight: isDragging ? undefined : localLayout.height,
           zIndex: isSelected ? 100 : textBox.zIndex,
           borderWidth: isSelected ? 1 : 0,
           borderColor: '#3B82F6',
           cursor: isDragging ? 'move' : (isSelected && !isTyping ? 'move' : 'default'),
+          touchAction: 'none',
         } as any,
       ]}
       onLayout={handleLayout}
+      pointerEvents="auto"
       // @ts-ignore - Web only click handling to prevent unselection
       onClick={(e: any) => e.stopPropagation()}
     >
@@ -347,7 +351,7 @@ export default function DraggableTextBox({
       )}
 
       {/* Content */}
-      <View style={{ flex: 1, cursor: 'text' } as any}>
+      <View style={{ flex: 1, cursor: 'text' } as any} pointerEvents={isTyping ? 'auto' : 'none'}>
         <RichTextBox
           ref={richTextBoxRef}
           textBox={textBox}
