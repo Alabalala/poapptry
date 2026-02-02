@@ -152,6 +152,9 @@ importers:
       react-native-worklets:
         specifier: 0.5.1
         version: 0.5.1(@babel/core@7.28.6)(react-native@0.81.5(@babel/core@7.28.6)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      use-latest-callback:
+        specifier: ^0.3.3
+        version: 0.3.3(react@19.1.0)
     devDependencies:
       '@types/react':
         specifier: ~19.1.0
@@ -4654,6 +4657,11 @@ packages:
 
   use-latest-callback@0.2.6:
     resolution: {integrity: sha512-FvRG9i1HSo0wagmX63Vrm8SnlUU3LMM3WyZkQ76RnslpBrX694AdG4A0zQBx2B3ZifFA0yv/BaEHGBnEax5rZg==}
+    peerDependencies:
+      react: '>=16.8'
+
+  use-latest-callback@0.3.3:
+    resolution: {integrity: sha512-G9A/EL7okx4wzBfATt8bdGg0v1K0Gp0IClTzljffM63gtPisgDKCaLCLUb4g2M4CoXDg5yyHjOU+g3SUPbXwrA==}
     peerDependencies:
       react: '>=16.8'
 
@@ -10295,6 +10303,10 @@ snapshots:
       '@types/react': 19.1.17
 
   use-latest-callback@0.2.6(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+
+  use-latest-callback@0.3.3(react@19.1.0):
     dependencies:
       react: 19.1.0
 
