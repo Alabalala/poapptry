@@ -1,5 +1,5 @@
 import { ArrowDownRight, RotateCw, X } from 'lucide-react-native';
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Image, PanResponder, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { BOOKMARKS, STAMPS, WASHI } from '../../constants/ThemeRegistry';
 import { Decoration } from '../../context/PoemContext';
@@ -56,27 +56,37 @@ export default function DraggableDecoration({
     baseHeight = baseWidth; // Square
   }
 
+  // Base dimensions before user scaling
+  // We use these to calculate the center point consistently
+  
+  // Current dimensions including user scale
   const finalWidth = baseWidth * decoration.scale;
   const finalHeight = baseHeight * decoration.scale;
 
   // Calculate pixel position from percentage
   // decoration.x/y is the percentage position of the CENTER of the element
-  const getPixelPos = (xPercent: number, yPercent: number) => {
+  const getPixelPos = (xPercent: number, yPercent: number, scale: number) => {
+    const currentW = baseWidth * scale;
+    const currentH = baseHeight * scale;
     const safeH = Math.max(containerHeight, 1);
-    const x = (xPercent / 100) * safeWidth - (finalWidth / 2);
-    const y = (yPercent / 100) * safeH - (finalHeight / 2);
+    const x = (xPercent / 100) * safeWidth - (currentW / 2);
+    const y = (yPercent / 100) * safeH - (currentH / 2);
     return { x, y };
   };
 
-  const initialPos = getPixelPos(decoration.x, decoration.y);
+  const initialPos = getPixelPos(decoration.x, decoration.y, decoration.scale);
 
-  // Main position value - stores absolute pixels (relative to container top-left)
-  const position = useRef(new Animated.ValueXY({ x: initialPos.x, y: initialPos.y })).current;
+  // Local state for smooth interaction (replaces Animated.ValueXY for position)
+  // We keep rotation and scale here too for immediate feedback
+  const [layout, setLayout] = useState({
+    x: initialPos.x,
+    y: initialPos.y,
+    rotation: decoration.rotation,
+    scale: decoration.scale
+  });
   
-  // Track drag offset
-  const isDragging = useRef(false);
-  const initialRotation = useRef(0);
-  const initialScale = useRef(1);
+  const isDraggingRef = useRef(false);
+  const initialGesture = useRef({ x: 0, y: 0, rotation: 0, scale: 1 });
 
   // Entry animation
   const scaleAnim = useRef(new Animated.Value(1.5)).current;
@@ -89,7 +99,7 @@ export default function DraggableDecoration({
         toValue: 1,
         friction: 5,
         tension: 100,
-        useNativeDriver: false, // Changed to false to support web/transforms properly
+        useNativeDriver: false, 
       }),
       Animated.timing(opacityAnim, {
         toValue: decoration.opacity,
@@ -101,18 +111,22 @@ export default function DraggableDecoration({
   
   // Sync position with props when not dragging
   useEffect(() => {
-    if (!isDragging.current) {
-      const newPos = getPixelPos(decoration.x, decoration.y);
-      position.setValue(newPos);
+    if (!isDraggingRef.current) {
+      const newPos = getPixelPos(decoration.x, decoration.y, decoration.scale);
+      setLayout({
+        x: newPos.x,
+        y: newPos.y,
+        rotation: decoration.rotation,
+        scale: decoration.scale
+      });
     }
-  }, [decoration.x, decoration.y, containerWidth, containerHeight, finalWidth, finalHeight]);
+  }, [decoration.x, decoration.y, decoration.rotation, decoration.scale, containerWidth, containerHeight]);
 
   // Main Drag Handler
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: (e) => {
         if (!isEditing) return false;
-        // Don't capture if touching handles (handled by their own responders)
         return true;
       },
       onMoveShouldSetPanResponder: (e) => {
@@ -120,39 +134,48 @@ export default function DraggableDecoration({
         return true;
       },
       onPanResponderGrant: (e) => {
-        isDragging.current = true;
+        e.stopPropagation();
+        isDraggingRef.current = true;
         onSelect(decoration.id);
-        position.extractOffset();
+        initialGesture.current = { ...layout };
       },
-      onPanResponderMove: Animated.event(
-        [null, { dx: position.x, dy: position.y }],
-        { useNativeDriver: false }
-      ),
-      onPanResponderRelease: (e, gestureState) => {
-        position.flattenOffset();
+      onPanResponderMove: (_, gestureState) => {
+        const { dx, dy } = gestureState;
+        setLayout(prev => ({
+          ...prev,
+          x: initialGesture.current.x + dx,
+          y: initialGesture.current.y + dy
+        }));
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        isDraggingRef.current = false;
         
-        const currentX = (position.x as any)._value;
-        const currentY = (position.y as any)._value;
+        const newX = initialGesture.current.x + gestureState.dx;
+        const newY = initialGesture.current.y + gestureState.dy;
         
+        // Calculate dimensions for this specific interaction state
+        const currentW = baseWidth * layout.scale;
+        const currentH = baseHeight * layout.scale;
+
         // Calculate center point in pixels
-        let centerX = currentX + (finalWidth / 2);
-        let centerY = currentY + (finalHeight / 2);
+        let centerX = newX + (currentW / 2);
+        let centerY = newY + (currentH / 2);
         
         const safeH = Math.max(containerHeight, 1);
 
         // Apply clamping logic
         if (decoration.type !== 'bookmark') {
-           const minX = finalWidth / 2;
-           const maxX = safeWidth - (finalWidth / 2);
-           if (finalWidth > safeWidth) {
+           const minX = currentW / 2;
+           const maxX = safeWidth - (currentW / 2);
+           if (currentW > safeWidth) {
              centerX = safeWidth / 2;
            } else {
              centerX = Math.max(minX, Math.min(maxX, centerX));
            }
 
-           const minY = finalHeight / 2;
-           const maxY = safeH - (finalHeight / 2);
-           if (finalHeight > safeH) {
+           const minY = currentH / 2;
+           const maxY = safeH - (currentH / 2);
+           if (currentH > safeH) {
              centerY = safeH / 2;
            } else {
              centerY = Math.max(minY, Math.min(maxY, centerY));
@@ -160,10 +183,10 @@ export default function DraggableDecoration({
         } else {
            // Bookmark clamping
            const overlapBuffer = 20;
-           const minX = -(finalWidth / 2) + overlapBuffer;
-           const maxX = safeWidth + (finalWidth / 2) - overlapBuffer;
-           const minY = -(finalHeight / 2) + overlapBuffer;
-           const maxY = safeH + (finalHeight / 2) - overlapBuffer;
+           const minX = -(currentW / 2) + overlapBuffer;
+           const maxX = safeWidth + (currentW / 2) - overlapBuffer;
+           const minY = -(currentH / 2) + overlapBuffer;
+           const maxY = safeH + (currentH / 2) - overlapBuffer;
            
            centerX = Math.max(minX, Math.min(maxX, centerX));
            centerY = Math.max(minY, Math.min(maxY, centerY));
@@ -174,16 +197,15 @@ export default function DraggableDecoration({
         const newYPercent = (centerY / safeH) * 100;
         
         // Snap visual position
-        const clampedX = centerX - (finalWidth / 2);
-        const clampedY = centerY - (finalHeight / 2);
-        position.setValue({ x: clampedX, y: clampedY });
+        const clampedX = centerX - (currentW / 2);
+        const clampedY = centerY - (currentH / 2);
+        
+        setLayout(prev => ({ ...prev, x: clampedX, y: clampedY }));
 
         onUpdate(decoration.id, {
           x: newXPercent,
           y: newYPercent
         });
-        
-        isDragging.current = false;
       },
     })
   ).current;
@@ -193,16 +215,21 @@ export default function DraggableDecoration({
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
-      onPanResponderTerminationRequest: () => false, // Prevent parent from stealing
+      onPanResponderTerminationRequest: () => false, 
       onPanResponderGrant: (e) => {
         e.stopPropagation();
-        initialRotation.current = decoration.rotation;
+        isDraggingRef.current = true;
+        initialGesture.current = { ...layout };
       },
-      onPanResponderMove: (e, gestureState) => {
+      onPanResponderMove: (_, gestureState) => {
         // Linear mapping: Drag right to rotate CW
         const delta = gestureState.dx * 0.8; 
-        const newRotation = (initialRotation.current + delta) % 360;
-        onUpdate(decoration.id, { rotation: newRotation });
+        const newRotation = (initialGesture.current.rotation + delta) % 360;
+        setLayout(prev => ({ ...prev, rotation: newRotation }));
+      },
+      onPanResponderRelease: () => {
+        isDraggingRef.current = false;
+        onUpdate(decoration.id, { rotation: layout.rotation });
       },
       onPanResponderTerminate: (e) => e.stopPropagation(),
     })
@@ -213,21 +240,29 @@ export default function DraggableDecoration({
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
-      onPanResponderTerminationRequest: () => false, // Prevent parent from stealing
+      onPanResponderTerminationRequest: () => false, 
       onPanResponderGrant: (e) => {
         e.stopPropagation();
-        initialScale.current = decoration.scale;
+        isDraggingRef.current = true;
+        initialGesture.current = { ...layout };
       },
-      onPanResponderMove: (e, gestureState) => {
+      onPanResponderMove: (_, gestureState) => {
          // Dragging bottom-right corner
          // +dx increases size
          const growth = gestureState.dx; 
          // Calculate relative growth based on current width
-         const relativeGrowth = growth / finalWidth;
-         // Limit scale between 0.2x and 3x
-         const newScale = Math.max(0.2, Math.min(3, initialScale.current * (1 + relativeGrowth)));
+         // We use the initial width at the start of THIS drag for smoother scaling
+         const startWidth = baseWidth * initialGesture.current.scale;
+         const relativeGrowth = growth / startWidth;
          
-         onUpdate(decoration.id, { scale: newScale });
+         // Limit scale between 0.2x and 3x
+         const newScale = Math.max(0.2, Math.min(3, initialGesture.current.scale * (1 + relativeGrowth)));
+         
+         setLayout(prev => ({ ...prev, scale: newScale }));
+      },
+      onPanResponderRelease: () => {
+         isDraggingRef.current = false;
+         onUpdate(decoration.id, { scale: layout.scale });
       },
       onPanResponderTerminate: (e) => e.stopPropagation(),
     })
@@ -258,20 +293,21 @@ export default function DraggableDecoration({
       style={{
         touchAction: 'none',
         position: 'absolute',
-        left: 0,
-        top: 0,
-        width: finalWidth,
-        height: finalHeight,
+        left: layout.x,
+        top: layout.y,
+        width: baseWidth * layout.scale,
+        height: baseHeight * layout.scale,
+        
         zIndex: decoration.type === 'stamp' ? 25 : 20,
         elevation: decoration.type === 'stamp' ? 25 : 20,
         transform: [
-          { translateX: position.x },
-          { translateY: position.y },
-          { rotate: `${decoration.rotation}deg` },
-          { scale: scaleAnim }
+          // No translate here, we use left/top
+          { rotate: `${layout.rotation}deg` },
+          { scale: scaleAnim } // This is just for entry
         ],
         opacity: opacityAnim,
-      }}
+        cursor: isDraggingRef.current ? 'move' : (isSelected ? 'move' : 'default'), // Add cursor
+      } as any}
     >
       <TouchableOpacity 
         activeOpacity={1} 
@@ -288,6 +324,7 @@ export default function DraggableDecoration({
           onSelect(isSelected ? null : decoration.id);
         }}
       >
+
         <Image 
           source={source} 
           style={styles.image} 
