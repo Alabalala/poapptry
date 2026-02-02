@@ -2,8 +2,7 @@
   "name": "poapptry",
   "compatibility_date": "2025-02-02",
   "assets": {
-    "directory": "./dist",
-    "binding": "ASSETS"
+    "directory": "./dist"
   },
   "observability": {
     "enabled": true
