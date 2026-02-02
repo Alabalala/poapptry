@@ -301,12 +301,11 @@ export default function DraggableDecoration({
         zIndex: decoration.type === 'stamp' ? 25 : 20,
         elevation: decoration.type === 'stamp' ? 25 : 20,
         transform: [
-          // No translate here, we use left/top
           { rotate: `${layout.rotation}deg` },
-          { scale: scaleAnim } // This is just for entry
+          { scale: scaleAnim }
         ],
         opacity: opacityAnim,
-        cursor: isDraggingRef.current ? 'move' : (isSelected ? 'move' : 'default'), // Add cursor
+        cursor: isDraggingRef.current ? 'move' : (isSelected ? 'move' : 'default'),
       } as any}
     >
       <TouchableOpacity 
@@ -317,8 +316,9 @@ export default function DraggableDecoration({
           borderWidth: isSelected && isEditing ? 1 : 0,
           borderColor: '#9CA3AF',
           borderStyle: 'dashed',
-          borderRadius: 4
-        }}
+          borderRadius: 4,
+          touchAction: 'none', // Prevent browser gestures
+        } as any}
         onPress={(e) => {
           e.stopPropagation();
           onSelect(isSelected ? null : decoration.id);

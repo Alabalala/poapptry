@@ -85,7 +85,18 @@ export default function PaperBackground({ children, availableWidth, onSizeChange
           />
 
           {/* Layer 1: Clipped Decorations (Stamps, Washi) */}
-          <View style={[StyleSheet.absoluteFill, { overflow: 'hidden', borderRadius: 2 }]} pointerEvents="box-none">
+          <View 
+            style={[
+              StyleSheet.absoluteFill, 
+              { 
+                overflow: 'hidden', 
+                borderRadius: 2,
+                zIndex: 20, // Ensure stamps are above text for selection
+                elevation: 20 
+              }
+            ]} 
+            pointerEvents="box-none"
+          >
             {/* Washi Tapes */}
             {washiTapes.map((decoration) => (
               <DraggableDecoration
@@ -115,10 +126,6 @@ export default function PaperBackground({ children, availableWidth, onSizeChange
                 isEditing={isEditing}
               />
             ))}
-          </View>
-
-          <View style={styles.content} pointerEvents="box-none">
-            {children}
           </View>
 
           {/* Layer 2: Unclipped Decorations (Bookmarks) */}
