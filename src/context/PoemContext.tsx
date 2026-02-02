@@ -139,7 +139,7 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
   const [createdAt, setCreatedAt] = useState<number>(Date.now());
   const [title, setTitle] = useState('Untitled Poem');
   const [pages, setPages] = useState<Page[]>([{ id: '1', textBoxes: [] }]);
-  const [activeConfig, setActiveConfig] = useState<PoemConfig>({
+  const DEFAULT_CONFIG: PoemConfig = {
     presetId: 'classic',
     paperId: 'paper_classic',
     fontId: 'Crimson Text',
@@ -151,7 +151,8 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
     isBold: false,
     isItalic: false,
     isUnderline: false,
-  });
+  };
+  const [activeConfig, setActiveConfig] = useState<PoemConfig>(DEFAULT_CONFIG);
   
   const [stamps, setStamps] = useState<Decoration[]>([]);
   const [washiTapes, setWashiTapes] = useState<Decoration[]>([]);
@@ -235,6 +236,102 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
   // Persistence Key
   const STORAGE_KEY = 'poapptry_current_poem';
 
+  // Helper to migrate/normalize poem data
+  const processPoemData = (savedPoem: any) => {
+    const processed: any = {};
+    
+    processed.id = savedPoem.id;
+    processed.createdAt = savedPoem.createdAt;
+    processed.title = savedPoem.title;
+    processed.activeConfig = savedPoem.activeConfig;
+
+    // Pages Migration
+    if (savedPoem.pages) {
+      processed.pages = savedPoem.pages.map((p: any) => {
+        if (p.textBoxes) return p;
+        
+        // If old format with content string, convert to first text box
+        if (p.content) {
+          return {
+            ...p,
+            textBoxes: [{
+              id: Math.random().toString(36).substr(2, 9),
+              content: p.content,
+              x: 40,
+              y: 40,
+              width: 300,
+              height: 200,
+              rotation: 0,
+              zIndex: 1,
+              style: {
+                fontFamily: savedPoem.activeConfig?.fontId || 'Crimson Text',
+                fontSize: savedPoem.activeConfig?.fontSize === 'small' ? 16 : savedPoem.activeConfig?.fontSize === 'large' ? 22 : 18,
+                textAlign: savedPoem.activeConfig?.textAlign || 'left',
+                color: savedPoem.activeConfig?.inkColor || '#000000',
+              }
+            }]
+          };
+        }
+        
+        // If neither, just return empty textBoxes
+        return { ...p, textBoxes: [] };
+      });
+    } else {
+        // Default page if missing
+        processed.pages = [{ id: '1', textBoxes: [] }];
+    }
+    
+    // Stamps
+    if (savedPoem.stamps) {
+       // Ensure type property exists if missing
+       processed.stamps = savedPoem.stamps.map((s: any) => ({ ...s, type: s.type || 'stamp' }));
+    } else {
+       processed.stamps = [];
+    }
+    
+    // Washi Tapes (Load or Migrate from Fixed)
+    if (savedPoem.washiTapes) {
+      processed.washiTapes = savedPoem.washiTapes;
+    } else if (savedPoem.fixedDecorations?.washiId) {
+       // Migrate fixed washi to new free-floating system
+       const migratedWashi = {
+         id: Math.random().toString(36).substr(2, 9),
+         assetId: savedPoem.fixedDecorations.washiId,
+         type: 'washi',
+         x: 50,
+         y: savedPoem.fixedDecorations.washiPosition === 'bottom' ? 90 : 5,
+         rotation: 0,
+         scale: 1,
+         opacity: 1
+       };
+       processed.washiTapes = [migratedWashi];
+    } else {
+       processed.washiTapes = [];
+    }
+
+    // Bookmarks (Load or Migrate from Fixed)
+    if (savedPoem.bookmarks) {
+      processed.bookmarks = savedPoem.bookmarks;
+    } else if (savedPoem.fixedDecorations?.bookmarkId) {
+      // Migrate fixed bookmark to new free-floating system
+      const migratedBookmark = {
+         id: Math.random().toString(36).substr(2, 9),
+         assetId: savedPoem.fixedDecorations.bookmarkId,
+         type: 'bookmark',
+         x: savedPoem.fixedDecorations.bookmarkSide === 'left' ? 5 : 90,
+         y: -10,
+         rotation: 0,
+         scale: 1,
+         opacity: 1
+      };
+      processed.bookmarks = [migratedBookmark];
+    } else {
+        processed.bookmarks = [];
+    }
+    
+    return processed;
+  };
+
   // Load data on mount
   useEffect(() => {
     const loadLocalPoem = async () => {
@@ -242,87 +339,16 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
         const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
         if (jsonValue != null) {
           const savedPoem = JSON.parse(jsonValue);
-          // Restore state
-          if (savedPoem.id) setPoemId(savedPoem.id);
-          if (savedPoem.createdAt) setCreatedAt(savedPoem.createdAt);
-          if (savedPoem.title) setTitle(savedPoem.title);
-          if (savedPoem.pages) {
-            // Migrate pages to ensure textBoxes exist
-            const migratedPages = savedPoem.pages.map((p: any) => {
-              if (p.textBoxes) return p;
-              
-              // If old format with content string, convert to first text box
-              if (p.content) {
-                return {
-                  ...p,
-                  textBoxes: [{
-                    id: Math.random().toString(36).substr(2, 9),
-                    content: p.content,
-                    x: 40,
-                    y: 40,
-                    width: 300,
-                    height: 200,
-                    rotation: 0,
-                    zIndex: 1,
-                    style: {
-                      fontFamily: savedPoem.activeConfig?.fontId || 'Crimson Text',
-                      fontSize: savedPoem.activeConfig?.fontSize === 'small' ? 16 : savedPoem.activeConfig?.fontSize === 'large' ? 22 : 18,
-                      textAlign: savedPoem.activeConfig?.textAlign || 'left',
-                      color: savedPoem.activeConfig?.inkColor || '#000000',
-                    }
-                  }]
-                };
-              }
-              
-              // If neither, just return empty textBoxes
-              return { ...p, textBoxes: [] };
-            });
-            setPages(migratedPages);
-          }
-          if (savedPoem.activeConfig) setActiveConfig(savedPoem.activeConfig);
+          const processed = processPoemData(savedPoem);
           
-          // Migrate old stamps or load new
-          if (savedPoem.stamps) {
-             // Ensure type property exists if missing
-             const loadedStamps = savedPoem.stamps.map((s: any) => ({ ...s, type: s.type || 'stamp' }));
-             setStamps(loadedStamps);
-          }
-          
-          // Handle Washi Tapes (Load or Migrate from Fixed)
-          if (savedPoem.washiTapes) {
-            setWashiTapes(savedPoem.washiTapes);
-          } else if (savedPoem.fixedDecorations?.washiId) {
-             // Migrate fixed washi to new free-floating system
-             const migratedWashi = {
-               id: Math.random().toString(36).substr(2, 9),
-               assetId: savedPoem.fixedDecorations.washiId,
-               type: 'washi' as const,
-               x: 50,
-               y: savedPoem.fixedDecorations.washiPosition === 'bottom' ? 90 : 5,
-               rotation: 0,
-               scale: 1,
-               opacity: 1
-             };
-             setWashiTapes([migratedWashi]);
-          }
-
-          // Handle Bookmarks (Load or Migrate from Fixed)
-          if (savedPoem.bookmarks) {
-            setBookmarks(savedPoem.bookmarks);
-          } else if (savedPoem.fixedDecorations?.bookmarkId) {
-            // Migrate fixed bookmark to new free-floating system
-            const migratedBookmark = {
-               id: Math.random().toString(36).substr(2, 9),
-               assetId: savedPoem.fixedDecorations.bookmarkId,
-               type: 'bookmark' as const,
-               x: savedPoem.fixedDecorations.bookmarkSide === 'left' ? 5 : 90,
-               y: -10,
-               rotation: 0,
-               scale: 1,
-               opacity: 1
-            };
-            setBookmarks([migratedBookmark]);
-          }
+          if (processed.id) setPoemId(processed.id);
+          if (processed.createdAt) setCreatedAt(processed.createdAt);
+          if (processed.title) setTitle(processed.title);
+          if (processed.pages) setPages(processed.pages);
+          if (processed.activeConfig) setActiveConfig(processed.activeConfig);
+          if (processed.stamps) setStamps(processed.stamps);
+          if (processed.washiTapes) setWashiTapes(processed.washiTapes);
+          if (processed.bookmarks) setBookmarks(processed.bookmarks);
         }
       } catch (e) {
         console.error('Failed to load poem data', e);
@@ -585,16 +611,21 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const loadPoem = (poem: any) => {
-    if (poem.id) setPoemId(poem.id);
-    if (poem.createdAt) setCreatedAt(poem.createdAt);
-    if (poem.title) setTitle(poem.title);
-    if (poem.pages) setPages(poem.pages);
-    if (poem.activeConfig) setActiveConfig(poem.activeConfig);
-    if (poem.stamps) setStamps(poem.stamps);
-    if (poem.washiTapes) setWashiTapes(poem.washiTapes);
-    if (poem.bookmarks) setBookmarks(poem.bookmarks);
+    const processed = processPoemData(poem);
     
-    setIsEditing(false); // Open in view mode
+    if (processed.id) setPoemId(processed.id);
+    if (processed.createdAt) setCreatedAt(processed.createdAt);
+    if (processed.title) setTitle(processed.title);
+    
+    // Always set these, as processPoemData ensures they are valid arrays (empty if needed)
+    setPages(processed.pages);
+    setStamps(processed.stamps);
+    setWashiTapes(processed.washiTapes);
+    setBookmarks(processed.bookmarks);
+    
+    setActiveConfig(processed.activeConfig || DEFAULT_CONFIG);
+    
+    setIsEditing(true); // Open in edit mode so UI controls are visible
   };
 
   // Aliases for backward compatibility
