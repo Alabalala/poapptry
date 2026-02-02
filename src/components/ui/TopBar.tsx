@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePoem } from '../../context/PoemContext';
 import PoemActionsMenu from './PoemActionsMenu';
 
-export default function TopBar({ onBack, isLargeScreen }: { onBack?: () => void; isLargeScreen?: boolean }) {
+export default function TopBar({ onBack, isLargeScreen, onShareImage }: { onBack?: () => void; isLargeScreen?: boolean; onShareImage?: () => void }) {
   const { title, setTitle, isEditing, isGuest } = usePoem();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -60,7 +60,8 @@ export default function TopBar({ onBack, isLargeScreen }: { onBack?: () => void;
 
       <PoemActionsMenu 
         visible={menuVisible} 
-        onClose={() => setMenuVisible(false)} 
+        onClose={() => setMenuVisible(false)}
+        onShareImage={onShareImage}
       />
     </View>
   );

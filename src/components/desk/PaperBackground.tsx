@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     width: '100%',
-    overflow: 'hidden', // Ensure content doesn't bleed
+    overflow: 'visible', // Allow menus to extend beyond paper bounds
     borderRadius: 2,
   },
 });

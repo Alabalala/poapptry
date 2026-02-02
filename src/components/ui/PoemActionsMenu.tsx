@@ -1,5 +1,5 @@
 import { useToast } from '@/context/ToastContext';
-import { Eraser, Share2, Trash2 } from 'lucide-react-native';
+import { Download, Eraser, Share2, Trash2 } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Modal, Platform, Share, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,10 +9,11 @@ import ConfirmationModal from './ConfirmationModal';
 interface PoemActionsMenuProps {
   visible: boolean;
   onClose: () => void;
+  onShareImage?: () => void;
   anchorPosition?: { x: number; y: number }; // Optional for precise positioning if needed
 }
 
-export default function PoemActionsMenu({ visible, onClose }: PoemActionsMenuProps) {
+export default function PoemActionsMenu({ visible, onClose, onShareImage }: PoemActionsMenuProps) {
   const { removeAllDecorations, resetPoem, title, pages } = usePoem();
   const { showToast } = useToast();
   const insets = useSafeAreaInsets();
@@ -103,8 +104,18 @@ export default function PoemActionsMenu({ visible, onClose }: PoemActionsMenuPro
               >
                 <TouchableOpacity style={styles.menuItem} onPress={handleShare}>
                   <Share2 size={20} color="#374151" />
-                  <Text style={styles.menuItemText}>Share Poem</Text>
+                  <Text style={styles.menuItemText}>Share Text</Text>
                 </TouchableOpacity>
+
+                {onShareImage && (
+                  <TouchableOpacity style={styles.menuItem} onPress={() => {
+                    onShareImage();
+                    onClose();
+                  }}>
+                    <Download size={20} color="#374151" />
+                    <Text style={styles.menuItemText}>Save as PNG</Text>
+                  </TouchableOpacity>
+                )}
 
                 <View style={styles.divider} />
 

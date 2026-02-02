@@ -5,10 +5,13 @@ import DrawerScreen from '@/components/ui/DrawerScreen';
 import SidePanel from '@/components/ui/SidePanel';
 import SignUpPrompt from '@/components/ui/SignUpPrompt';
 import { FONT_CAPABILITIES } from '@/constants/ThemeRegistry';
+import * as Sharing from 'expo-sharing';
+import html2canvas from 'html2canvas';
 import { Edit2, Menu } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Keyboard, Platform, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { captureRef } from 'react-native-view-shot';
 import BottomToolbar from '../components/ui/BottomToolbar';
 import TopBar from '../components/ui/TopBar';
 import { usePoem } from '../context/PoemContext';
@@ -38,6 +41,7 @@ export default function Desk() {
   // Ref for PaperBackground to get its dimensions for boundary checking
   const [paperLayout, setPaperLayout] = useState({ width: 0, height: 0 });
   const [actualPaperSize, setActualPaperSize] = useState({ width: 0, height: 0 });
+  const viewShotRef = useRef<View>(null);
 
   const fontCaps = FONT_CAPABILITIES[activeConfig.fontId] || { supportsBold: false, supportsItalic: false };
   const shouldUseBold = activeConfig.isBold && fontCaps.supportsBold;
@@ -55,6 +59,56 @@ export default function Desk() {
   const activePage = pages[0];
 
   if (!activePage) return null;
+
+  const handleShareImage = async () => {
+    console.log('handleShareImage initiated');
+    try {
+      if (Platform.OS === 'web') {
+        // Add a small delay to ensure content is ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const poemElement = document.getElementById('poem-view');
+        if (!poemElement) {
+          throw new Error('Poem view not found (nativeID mismatch)');
+        }
+        
+        const canvas = await html2canvas(poemElement, {
+          backgroundColor: null,
+          scale: 2, // Higher quality
+        });
+        
+        const uri = canvas.toDataURL('image/png');
+        
+        const link = document.createElement('a');
+        link.href = uri;
+        link.download = 'poem.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else if (viewShotRef.current) {
+        console.log('viewShotRef found, preparing capture...');
+        console.log('Capturing view...');
+        const uri = await captureRef(viewShotRef, {
+          format: 'png',
+          quality: 1,
+          result: 'tmpfile'
+        });
+        console.log('Capture successful, URI generated');
+
+        await Sharing.shareAsync(uri, {
+          mimeType: 'image/png',
+          dialogTitle: 'Share Poem',
+          UTI: 'public.png'
+        });
+      } else {
+        console.error('viewShotRef is null');
+        alert('Error: Could not find poem view to capture. Please try again.');
+      }
+    } catch (error) {
+      console.error('Failed to capture or share image:', error);
+      alert('Failed to share image. Please try again. Error: ' + (error instanceof Error ? error.message : String(error)));
+    }
+  };
 
   const handlePaste = async () => {
     if (Platform.OS === 'web') {
@@ -107,7 +161,11 @@ export default function Desk() {
       <DrawerScreen isVisible={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
 
       {/* Top Bar (Visible in Edit Mode) */}
-      <TopBar onBack={() => setIsDrawerOpen(true)} isLargeScreen={isLargeScreen} />
+      <TopBar 
+        onBack={() => setIsDrawerOpen(true)} 
+        isLargeScreen={isLargeScreen}
+        onShareImage={handleShareImage}
+      />
 
       <View style={{ flex: 1, flexDirection: 'row' }}>
         <View style={{ flex: 1 }}>
@@ -127,6 +185,9 @@ export default function Desk() {
               >
                 {/* Paper Content - Single Page View */}
                 <View 
+                  ref={viewShotRef}
+                  nativeID="poem-view"
+                  collapsable={false}
                   key={activePage.id} 
                   style={styles.paperContainer}
                   onLayout={(e) => setPaperLayout(e.nativeEvent.layout)}
