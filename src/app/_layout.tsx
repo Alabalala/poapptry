@@ -23,12 +23,20 @@ import { PressStart2P_400Regular } from '@expo-google-fonts/press-start-2p';
 import { VT323_400Regular } from '@expo-google-fonts/vt323';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import * as WebBrowser from 'expo-web-browser';
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '../global.css';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+// Handle OAuth redirects on Web
+// This must be here to catch the redirect when the popup loads the app
+if (Platform.OS === 'web') {
+  WebBrowser.maybeCompleteAuthSession();
+}
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
