@@ -14,13 +14,32 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID
 };
 
+// Check if we are in a static build environment (Node.js) and missing keys
+// This prevents the build from crashing during static rendering
+if (typeof window === 'undefined' && !firebaseConfig.apiKey) {
+  console.warn("Detected missing Firebase keys in static build. Using mock values to prevent build crash.");
+  firebaseConfig.apiKey = "dummy-api-key-for-build";
+  firebaseConfig.authDomain = "dummy.firebaseapp.com";
+  firebaseConfig.projectId = "dummy-project";
+}
+
 // Initialize Firebase
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
 if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
+  try {
+    app = initializeApp(firebaseConfig);
+  } catch (error) {
+    console.error('Firebase initialization error:', error);
+    // Fallback for build safety
+    if (typeof window === 'undefined') {
+       app = getApps()[0]; // Should be undefined but let's see
+    }
+    throw error;
+  }
+
   
   if (Platform.OS === 'web') {
     // On web, getAuth() uses browserLocalPersistence by default.
