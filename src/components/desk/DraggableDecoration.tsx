@@ -13,6 +13,7 @@ interface DraggableDecorationProps {
   onSelect: (id: string | null) => void;
   isSelected: boolean;
   isEditing: boolean;
+  zIndex?: number;
 }
 
 export default function DraggableDecoration({ 
@@ -23,11 +24,12 @@ export default function DraggableDecoration({
   onRemove,
   onSelect,
   isSelected,
-  isEditing 
+  isEditing,
+  zIndex
 }: DraggableDecorationProps) {
   
   // Resolve source based on type/assetId
-  let source;
+  let source: any;
   if (decoration.type === 'washi') {
     source = WASHI[decoration.assetId as keyof typeof WASHI];
   } else if (decoration.type === 'bookmark') {
@@ -122,22 +124,56 @@ export default function DraggableDecoration({
     }
   }, [decoration.x, decoration.y, decoration.rotation, decoration.scale, containerWidth, containerHeight]);
 
+  // Refs to avoid stale closures in PanResponder
+  const propsRef = useRef({ 
+    isEditing, 
+    onSelect, 
+    onUpdate, 
+    onRemove, 
+    decoration, 
+    containerWidth, 
+    containerHeight, 
+    baseWidth, 
+    baseHeight, 
+    safeWidth: Math.max(containerWidth, 1) 
+  });
+  
+  useEffect(() => {
+    propsRef.current = { 
+      isEditing, 
+      onSelect, 
+      onUpdate, 
+      onRemove, 
+      decoration, 
+      containerWidth, 
+      containerHeight, 
+      baseWidth, 
+      baseHeight,
+      safeWidth: Math.max(containerWidth, 1)
+    };
+  }, [isEditing, onSelect, onUpdate, onRemove, decoration, containerWidth, containerHeight, baseWidth, baseHeight]);
+
+  const layoutRef = useRef(layout);
+  useEffect(() => {
+    layoutRef.current = layout;
+  }, [layout]);
+
   // Main Drag Handler
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: (e) => {
-        if (!isEditing) return false;
+      onStartShouldSetPanResponder: () => {
+        if (!propsRef.current.isEditing) return false;
         return true;
       },
-      onMoveShouldSetPanResponder: (e) => {
-        if (!isEditing) return false;
+      onMoveShouldSetPanResponder: () => {
+        if (!propsRef.current.isEditing) return false;
         return true;
       },
       onPanResponderGrant: (e) => {
         e.stopPropagation();
         isDraggingRef.current = true;
-        onSelect(decoration.id);
-        initialGesture.current = { ...layout };
+        propsRef.current.onSelect(propsRef.current.decoration.id);
+        initialGesture.current = { ...layoutRef.current };
       },
       onPanResponderMove: (_, gestureState) => {
         const { dx, dy } = gestureState;
@@ -150,12 +186,15 @@ export default function DraggableDecoration({
       onPanResponderRelease: (_, gestureState) => {
         isDraggingRef.current = false;
         
+        const { baseWidth, baseHeight, containerHeight, safeWidth, decoration, onUpdate } = propsRef.current;
+        const currentScale = layoutRef.current.scale;
+
         const newX = initialGesture.current.x + gestureState.dx;
         const newY = initialGesture.current.y + gestureState.dy;
         
         // Calculate dimensions for this specific interaction state
-        const currentW = baseWidth * layout.scale;
-        const currentH = baseHeight * layout.scale;
+        const currentW = baseWidth * currentScale;
+        const currentH = baseHeight * currentScale;
 
         // Calculate center point in pixels
         let centerX = newX + (currentW / 2);
@@ -207,6 +246,7 @@ export default function DraggableDecoration({
           y: newYPercent
         });
       },
+      onPanResponderTerminate: (e) => e.stopPropagation(),
     })
   ).current;
 
@@ -219,7 +259,7 @@ export default function DraggableDecoration({
       onPanResponderGrant: (e) => {
         e.stopPropagation();
         isDraggingRef.current = true;
-        initialGesture.current = { ...layout };
+        initialGesture.current = { ...layoutRef.current };
       },
       onPanResponderMove: (_, gestureState) => {
         // Linear mapping: Drag right to rotate CW
@@ -229,7 +269,7 @@ export default function DraggableDecoration({
       },
       onPanResponderRelease: () => {
         isDraggingRef.current = false;
-        onUpdate(decoration.id, { rotation: layout.rotation });
+        propsRef.current.onUpdate(propsRef.current.decoration.id, { rotation: layoutRef.current.rotation });
       },
       onPanResponderTerminate: (e) => e.stopPropagation(),
     })
@@ -244,7 +284,7 @@ export default function DraggableDecoration({
       onPanResponderGrant: (e) => {
         e.stopPropagation();
         isDraggingRef.current = true;
-        initialGesture.current = { ...layout };
+        initialGesture.current = { ...layoutRef.current };
       },
       onPanResponderMove: (_, gestureState) => {
          // Dragging bottom-right corner
@@ -252,7 +292,7 @@ export default function DraggableDecoration({
          const growth = gestureState.dx; 
          // Calculate relative growth based on current width
          // We use the initial width at the start of THIS drag for smoother scaling
-         const startWidth = baseWidth * initialGesture.current.scale;
+         const startWidth = propsRef.current.baseWidth * initialGesture.current.scale;
          const relativeGrowth = growth / startWidth;
          
          // Limit scale between 0.2x and 3x
@@ -262,7 +302,7 @@ export default function DraggableDecoration({
       },
       onPanResponderRelease: () => {
          isDraggingRef.current = false;
-         onUpdate(decoration.id, { scale: layout.scale });
+         propsRef.current.onUpdate(propsRef.current.decoration.id, { scale: layoutRef.current.scale });
       },
       onPanResponderTerminate: (e) => e.stopPropagation(),
     })
@@ -277,10 +317,10 @@ export default function DraggableDecoration({
       onPanResponderGrant: (e) => {
         e.stopPropagation();
       },
-      onPanResponderRelease: (e, gestureState) => {
+      onPanResponderRelease: (_, gestureState) => {
         // Tap detection
         if (Math.abs(gestureState.dx) < 10 && Math.abs(gestureState.dy) < 10) {
-           onRemove(decoration.id);
+           propsRef.current.onRemove(propsRef.current.decoration.id);
         }
       },
       onPanResponderTerminate: (e) => e.stopPropagation(),
@@ -298,8 +338,8 @@ export default function DraggableDecoration({
         width: baseWidth * layout.scale,
         height: baseHeight * layout.scale,
         
-        zIndex: decoration.type === 'stamp' ? 25 : 20,
-        elevation: decoration.type === 'stamp' ? 25 : 20,
+        zIndex: zIndex ?? (decoration.type === 'stamp' ? 25 : 20),
+        elevation: zIndex ?? (decoration.type === 'stamp' ? 25 : 20),
         transform: [
           { rotate: `${layout.rotation}deg` },
           { scale: scaleAnim }

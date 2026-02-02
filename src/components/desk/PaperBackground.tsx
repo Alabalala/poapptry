@@ -50,7 +50,7 @@ export default function PaperBackground({ children, availableWidth, onSizeChange
     const { width, height } = event.nativeEvent.layout;
     setPaperLayout({ width, height });
     
-    containerRef.current?.measure((x, y, w, h, pageX, pageY) => {
+    containerRef.current?.measure((_x, _y, w, h, pageX, pageY) => {
       setPaperBounds({ x: pageX, y: pageY, width: w || width, height: h || height });
       onSizeChange?.(w || width, h || height);
     });
@@ -84,35 +84,19 @@ export default function PaperBackground({ children, availableWidth, onSizeChange
             resizeMode="cover"
           />
 
-          {/* Layer 1: Clipped Decorations (Stamps, Washi) */}
+          {/* Layer 1: Stamps (Bottom) */}
           <View 
             style={[
               StyleSheet.absoluteFill, 
               { 
                 overflow: 'hidden', 
                 borderRadius: 2,
-                zIndex: 20, // Ensure stamps are above text for selection
-                elevation: 20 
+                zIndex: 10,
+                elevation: 10 
               }
             ]} 
             pointerEvents="box-none"
           >
-            {/* Washi Tapes */}
-            {washiTapes.map((decoration) => (
-              <DraggableDecoration
-                key={decoration.id}
-                decoration={decoration}
-                containerWidth={paperLayout.width || 100} 
-                containerHeight={paperLayout.height || 100}
-                onUpdate={updateDecoration}
-                onRemove={removeDecoration}
-                onSelect={setSelectedDecorationId}
-                isSelected={selectedDecorationId === decoration.id}
-                isEditing={isEditing}
-              />
-            ))}
-            
-            {/* Stamps */}
             {stamps.map((decoration) => (
               <DraggableDecoration
                 key={decoration.id}
@@ -124,13 +108,64 @@ export default function PaperBackground({ children, availableWidth, onSizeChange
                 onSelect={setSelectedDecorationId}
                 isSelected={selectedDecorationId === decoration.id}
                 isEditing={isEditing}
+                zIndex={10}
               />
             ))}
           </View>
 
-          {/* Layer 2: Unclipped Decorations (Bookmarks) */}
-          <View style={[StyleSheet.absoluteFill, { overflow: 'visible', borderRadius: 2 }]} pointerEvents="box-none">
-            {/* Bookmarks */}
+          {/* Layer 2: Content (TextBoxes) */}
+          <View 
+            style={[
+              styles.content,
+              { zIndex: 20, elevation: 20 } 
+            ]} 
+            pointerEvents="box-none"
+          >
+            {children}
+          </View>
+
+          {/* Layer 3: Washi Tapes */}
+          <View 
+            style={[
+              StyleSheet.absoluteFill, 
+              { 
+                overflow: 'hidden', 
+                borderRadius: 2,
+                zIndex: 30,
+                elevation: 30 
+              }
+            ]} 
+            pointerEvents="box-none"
+          >
+            {washiTapes.map((decoration) => (
+              <DraggableDecoration
+                key={decoration.id}
+                decoration={decoration}
+                containerWidth={paperLayout.width || 100} 
+                containerHeight={paperLayout.height || 100}
+                onUpdate={updateDecoration}
+                onRemove={removeDecoration}
+                onSelect={setSelectedDecorationId}
+                isSelected={selectedDecorationId === decoration.id}
+                isEditing={isEditing}
+                zIndex={30}
+              />
+            ))}
+          </View>
+
+          {/* Layer 4: Bookmarks (Top) */}
+          <View 
+            style={[
+              StyleSheet.absoluteFill, 
+              { 
+                overflow: 'visible', // Bookmarks can hang off
+                borderRadius: 2,
+                zIndex: 40,
+                elevation: 40
+              }
+            ]} 
+            pointerEvents="box-none"
+          >
             {bookmarks.map((decoration) => (
               <DraggableDecoration
                 key={decoration.id}
@@ -142,6 +177,7 @@ export default function PaperBackground({ children, availableWidth, onSizeChange
                 onSelect={setSelectedDecorationId}
                 isSelected={selectedDecorationId === decoration.id}
                 isEditing={isEditing}
+                zIndex={40}
               />
             ))}
           </View>
@@ -191,7 +227,7 @@ const styles = StyleSheet.create({
       },
       web: {
         boxShadow: '0px 15px 35px rgba(0, 0, 0, 0.2)', // Darker, substantial shadow
-      },
+      } as any,
     }),
   },
   paperImage: {
