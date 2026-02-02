@@ -256,6 +256,7 @@ export default function DraggableDecoration({
     <Animated.View
       {...panResponder.panHandlers}
       style={{
+        touchAction: 'none',
         position: 'absolute',
         left: 0,
         top: 0,

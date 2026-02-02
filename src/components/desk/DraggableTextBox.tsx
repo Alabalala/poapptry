@@ -303,7 +303,7 @@ export default function DraggableTextBox({
         <View
           style={[
             StyleSheet.absoluteFill,
-            { zIndex: 1, backgroundColor: 'transparent' }
+            { zIndex: 1, backgroundColor: 'transparent', touchAction: 'none' } as any
           ]}
           {...moveResponder.panHandlers}
         />
