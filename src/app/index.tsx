@@ -196,7 +196,7 @@ export default function Desk() {
                     availableWidth={availableWidth}
                     onSizeChange={(w, h) => setActualPaperSize({ width: w, height: h })}
                   >
-                    <View style={{ flex: 1, width: '100%', height: '100%' }}>
+                    <View style={{ flex: 1, width: '100%', height: '100%' }} pointerEvents="box-none">
                       {activePage?.textBoxes?.map((textBox) => (
                         <DraggableTextBox
                           key={textBox.id}
