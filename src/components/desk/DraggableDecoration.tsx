@@ -303,6 +303,7 @@ export default function DraggableDecoration({
               style={[
                 styles.controlButton,
                 styles.deleteButton,
+                { touchAction: 'none' } as any,
                 decoration.type === 'bookmark' && {
                   top: '10%',
                   right: '15%',
@@ -319,6 +320,7 @@ export default function DraggableDecoration({
               style={[
                 styles.controlButton,
                 styles.rotateButton,
+                { touchAction: 'none' } as any,
                 decoration.type === 'bookmark' && { top: '5%' }
               ]}
             >
@@ -332,6 +334,7 @@ export default function DraggableDecoration({
               style={[
                 styles.controlButton,
                 styles.resizeButton,
+                { touchAction: 'none' } as any,
                 decoration.type === 'bookmark' && {
                   bottom: '10%',
                   right: '15%',

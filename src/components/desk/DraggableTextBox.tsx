@@ -366,16 +366,16 @@ export default function DraggableTextBox({
       {isSelected && isEditing && (
         <>
           {/* Corner Handles */}
-          <View style={[styles.resizeHandle, styles.tl]} {...tlResponder.panHandlers} />
-          <View style={[styles.resizeHandle, styles.tr]} {...trResponder.panHandlers} />
-          <View style={[styles.resizeHandle, styles.bl]} {...blResponder.panHandlers} />
-          <View style={[styles.resizeHandle, styles.br]} {...brResponder.panHandlers} />
+          <View style={[styles.resizeHandle, styles.tl, { touchAction: 'none' } as any]} {...tlResponder.panHandlers} />
+          <View style={[styles.resizeHandle, styles.tr, { touchAction: 'none' } as any]} {...trResponder.panHandlers} />
+          <View style={[styles.resizeHandle, styles.bl, { touchAction: 'none' } as any]} {...blResponder.panHandlers} />
+          <View style={[styles.resizeHandle, styles.br, { touchAction: 'none' } as any]} {...brResponder.panHandlers} />
 
           {/* Side Pill Handles */}
-          <View style={[styles.sideHandle, styles.l]} {...lResponder.panHandlers}>
+          <View style={[styles.sideHandle, styles.l, { touchAction: 'none' } as any]} {...lResponder.panHandlers}>
             <View style={styles.pill} />
           </View>
-          <View style={[styles.sideHandle, styles.r]} {...rResponder.panHandlers}>
+          <View style={[styles.sideHandle, styles.r, { touchAction: 'none' } as any]} {...rResponder.panHandlers}>
             <View style={styles.pill} />
           </View>
         </>
