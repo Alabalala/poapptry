@@ -1,0 +1,47 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "confirm": "Confirmer",
+    "error": "Erreur"
+  },
+  "auth": {
+    "welcomeBack": "Bon retour",
+    "createAccount": "Créer un compte",
+    "signInSubtitle": "Connectez-vous pour accéder à vos poèmes enregistrés",
+    "signUpSubtitle": "Inscrivez-vous pour sauvegarder votre progression",
+    "email": "Email",
+    "password": "Mot de passe",
+    "signIn": "Se connecter",
+    "signUp": "S'inscrire",
+    "orContinueWith": "Ou continuer avec",
+    "dontHaveAccount": "Pas encore de compte ?",
+    "alreadyHaveAccount": "Déjà un compte ?"
+  },
+  "drawer": {
+    "title": "Tiroir à Poèmes",
+    "guestTitle": "Sauvegardez vos poèmes !",
+    "guestMessage": "Pour sauvegarder vos poèmes et voir votre tiroir, inscrivez-vous gratuitement !",
+    "signInOrSignUp": "S'inscrire / Se connecter",
+    "myPoems": "Vos Poèmes",
+    "newPoem": "Nouveau Poème",
+    "untitledPoem": "Sans titre",
+    "deletePoem": "Supprimer le poème",
+    "deletePoemConfirm": "Êtes-vous sûr de vouloir supprimer ce poème ?",
+    "deleteFailed": "Échec de la suppression du poème",
+    "emptyState": "Pas encore de poèmes. Créez-en un !",
+    "settings": "Paramètres",
+    "language": "Langue",
+    "signOut": "Se déconnecter",
+    "open": "Ouvrir"
+  },
+  "editor": {
+    "untitledPoem": "Poème sans titre",
+    "tapToEdit": "Appuyez pour modifier",
+    "sharePoem": "Partager le poème",
+    "shareError": "Échec du partage de l'image"
+  }
+}

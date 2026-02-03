@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { FolderOpen, MoreVertical, UserPlus } from 'lucide-react-native';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePoem } from '../../context/PoemContext';
@@ -11,6 +12,7 @@ export default function TopBar({ onBack, isLargeScreen, onShareImage }: { onBack
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
+  const { t } = useTranslation();
 
   if (!isEditing) return null;
 
@@ -31,7 +33,7 @@ export default function TopBar({ onBack, isLargeScreen, onShareImage }: { onBack
           value={title}
           onChangeText={setTitle}
           style={styles.titleInput }
-          placeholder="Untitled Poem"
+          placeholder={t('editor.untitledPoem')}
           placeholderTextColor="#9CA3AF"
         />
         
@@ -42,7 +44,7 @@ export default function TopBar({ onBack, isLargeScreen, onShareImage }: { onBack
               onPress={() => router.push('/auth')}
             >
               <UserPlus size={20} color="#3B82F6" />
-              <Text style={styles.signupText}>Save</Text>
+              <Text style={styles.signupText}>{t('common.save')}</Text>
             </TouchableOpacity>
           )}
 
@@ -106,30 +108,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    minWidth: 40, // Ensure space is reserved
-    justifyContent: 'flex-end',
   },
   signupButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EFF6FF', // Light blue bg
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#DBEAFE',
-    flexShrink: 0, // Ensure button doesn't shrink or get pushed out
+    gap: 4,
   },
   signupText: {
     color: '#3B82F6',
     fontWeight: '600',
     fontSize: 14,
-    marginLeft: 6,
   },
   menuButton: {
-    width: 32,
+    width: 40,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.03)',
   },
 });

@@ -2,14 +2,17 @@ import { useAuth } from '@/context/AuthContext';
 import { useLibrary } from '@/context/LibraryContext';
 import { usePoem } from '@/context/PoemContext';
 import { PoemData, poemService } from '@/services/poemService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { LogOut, Plus, Trash2, User, X } from 'lucide-react-native';
-import React, { useEffect, useRef } from 'react';
+import { Check, Globe, LogOut, Plus, Trash2, User, X } from 'lucide-react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Alert,
     Animated,
     Dimensions,
     FlatList,
+    Modal,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -60,6 +63,21 @@ interface DrawerScreenProps {
 }
 
 export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) {
+  const { t, i18n } = useTranslation();
+  const [showLanguages, setShowLanguages] = useState(false);
+
+  const LANGUAGES = [
+    { code: 'en', label: 'English' },
+    { code: 'es', label: 'Español' },
+    { code: 'fr', label: 'Français' },
+  ];
+
+  const changeLanguage = async (lang: string) => {
+    await i18n.changeLanguage(lang);
+    await AsyncStorage.setItem('user-language', lang);
+    setShowLanguages(false);
+  };
+
   const { width } = useWindowDimensions();
   const DRAWER_WIDTH = width; // Full Screen
   
@@ -127,12 +145,12 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
   const handleDeletePoem = async (id: string, e: any) => {
     e.stopPropagation();
     Alert.alert(
-      "Delete Poem",
-      "Are you sure you want to delete this poem?",
+      t('drawer.deletePoem'),
+      t('drawer.deletePoemConfirm'),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t('common.cancel'), style: "cancel" },
         { 
-          text: "Delete", 
+          text: t('common.delete'), 
           style: "destructive",
           onPress: async () => {
             try {
@@ -142,7 +160,7 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
                 createNewPoem();
               }
             } catch (error) {
-              Alert.alert("Error", "Failed to delete poem");
+              Alert.alert(t('common.error'), t('drawer.deleteFailed'));
             }
           }
         }
@@ -191,7 +209,7 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
         ]}
       >
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Poem Drawer</Text>
+          <Text style={styles.headerTitle}>{t('drawer.title')}</Text>
           <TouchableOpacity 
             onPress={onClose} 
             hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
@@ -206,9 +224,9 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
             <View style={styles.guestIconCircle}>
               <User size={60} color="#3B82F6" />
             </View>
-            <Text style={styles.guestTitle}>Save your poems!</Text>
+            <Text style={styles.guestTitle}>{t('drawer.guestTitle')}</Text>
             <Text style={styles.guestMessage}>
-              To save your poems and see your drawer, sign up for free!
+              {t('drawer.guestMessage')}
             </Text>
             <TouchableOpacity 
               style={styles.authButton}
@@ -217,7 +235,7 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
                 router.push('/auth');
               }}
             >
-              <Text style={styles.authButtonText}>Sign Up / Log In</Text>
+              <Text style={styles.authButtonText}>{t('drawer.signInOrSignUp')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -231,17 +249,22 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
               <Text style={styles.userEmail} numberOfLines={1}>
                 {user.email}
               </Text>
+              
+              <TouchableOpacity style={styles.settingsButton} onPress={() => setShowLanguages(true)}>
+                <Globe size={18} color="#374151" />
+              </TouchableOpacity>
+              
               <TouchableOpacity style={styles.signOutButtonSmall} onPress={handleSignOut}>
-                <LogOut size={16} color="#EF4444" />
+                <LogOut size={18} color="#EF4444" />
               </TouchableOpacity>
             </View>
 
             <View style={styles.poemsListContainer}>
               <View style={styles.listHeader}>
-                <Text style={styles.listTitle}>Your Poems ({poems.length})</Text>
+                <Text style={styles.listTitle}>{t('drawer.myPoems')} ({poems.length})</Text>
                 <TouchableOpacity onPress={handleNewPoem} style={styles.newPoemButton}>
                   <Plus size={16} color="#FFF" />
-                  <Text style={styles.newPoemText}>New Poem</Text>
+                  <Text style={styles.newPoemText}>{t('drawer.newPoem')}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -253,7 +276,7 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
                 </View>
               ) : poems.length === 0 ? (
                 <View style={styles.emptyState}>
-                  <Text style={styles.emptyStateText}>No poems yet. Create one!</Text>
+                  <Text style={styles.emptyStateText}>{t('drawer.emptyState')}</Text>
                 </View>
               ) : (
                 <FlatList
@@ -281,7 +304,7 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
                         {poemId === item.id && (
                           <View style={styles.activeOverlay}>
                              <View style={styles.activeBadge}>
-                               <Text style={styles.activeBadgeText}>Open</Text>
+                               <Text style={styles.activeBadgeText}>{t('drawer.open')}</Text>
                              </View>
                           </View>
                         )}
@@ -299,7 +322,7 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
                       
                       <View style={styles.poemInfo}>
                         <Text style={styles.poemTitle} numberOfLines={1}>
-                          {item.title || "Untitled"}
+                          {item.title || t('drawer.untitledPoem')}
                         </Text>
                         <Text style={styles.poemDate}>
                           {new Date(item.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
@@ -313,6 +336,48 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
           </>
         )}
       </Animated.View>
+
+      {/* Language Selection Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showLanguages}
+        onRequestClose={() => setShowLanguages(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowLanguages(false)}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t('drawer.language')}</Text>
+              <TouchableOpacity onPress={() => setShowLanguages(false)}>
+                <X size={20} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            
+            {LANGUAGES.map((lang) => (
+              <TouchableOpacity 
+                key={lang.code} 
+                style={[
+                  styles.languageOption,
+                  i18n.language === lang.code && styles.languageOptionActive
+                ]}
+                onPress={() => changeLanguage(lang.code)}
+              >
+                <Text style={[
+                  styles.languageText,
+                  i18n.language === lang.code && styles.languageTextActive
+                ]}>
+                  {lang.label}
+                </Text>
+                {i18n.language === lang.code && <Check size={20} color="#3B82F6" />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -439,6 +504,12 @@ const styles = StyleSheet.create({
     color: '#374151',
     fontWeight: '500',
   },
+  settingsButton: {
+    padding: 8,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    marginRight: 8,
+  },
   signOutButtonSmall: {
     padding: 8,
     backgroundColor: '#FEF2F2',
@@ -548,5 +619,54 @@ const styles = StyleSheet.create({
   poemDate: {
     fontSize: 12,
     color: '#9CA3AF',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    width: '100%',
+    maxWidth: 400,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  languageOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+  languageOptionActive: {
+    backgroundColor: '#EFF6FF',
+  },
+  languageText: {
+    fontSize: 16,
+    color: '#374151',
+  },
+  languageTextActive: {
+    color: '#3B82F6',
+    fontWeight: '600',
   },
 });

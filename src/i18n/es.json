@@ -1,0 +1,47 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "confirm": "Confirmar",
+    "error": "Error"
+  },
+  "auth": {
+    "welcomeBack": "Bienvenido de nuevo",
+    "createAccount": "Crear cuenta",
+    "signInSubtitle": "Inicia sesión para acceder a tus poemas guardados",
+    "signUpSubtitle": "Regístrate para guardar tu progreso y acceder desde cualquier lugar",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "signIn": "Iniciar sesión",
+    "signUp": "Registrarse",
+    "orContinueWith": "O continuar con",
+    "dontHaveAccount": "¿No tienes una cuenta?",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?"
+  },
+  "drawer": {
+    "title": "Cajón de Poemas",
+    "guestTitle": "¡Guarda tus poemas!",
+    "guestMessage": "Para guardar tus poemas y ver tu cajón, ¡regístrate gratis!",
+    "signInOrSignUp": "Registrarse / Iniciar sesión",
+    "myPoems": "Tus Poemas",
+    "newPoem": "Nuevo Poema",
+    "untitledPoem": "Sin título",
+    "deletePoem": "Eliminar Poema",
+    "deletePoemConfirm": "¿Estás seguro de que quieres eliminar este poema?",
+    "deleteFailed": "Error al eliminar el poema",
+    "emptyState": "Aún no hay poemas. ¡Crea uno!",
+    "settings": "Configuración",
+    "language": "Idioma",
+    "signOut": "Cerrar sesión",
+    "open": "Abrir"
+  },
+  "editor": {
+    "untitledPoem": "Poema sin título",
+    "tapToEdit": "Toca para editar",
+    "sharePoem": "Compartir Poema",
+    "shareError": "Error al compartir imagen"
+  }
+}

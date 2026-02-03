@@ -1,0 +1,47 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "error": "Error"
+  },
+  "auth": {
+    "welcomeBack": "Welcome Back",
+    "createAccount": "Create Account",
+    "signInSubtitle": "Sign in to access your saved poems",
+    "signUpSubtitle": "Sign up to save your progress and access it anywhere",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "orContinueWith": "Or continue with",
+    "dontHaveAccount": "Don't have an account?",
+    "alreadyHaveAccount": "Already have an account?"
+  },
+  "drawer": {
+    "title": "Poem Drawer",
+    "guestTitle": "Save your poems!",
+    "guestMessage": "To save your poems and see your drawer, sign up for free!",
+    "signInOrSignUp": "Sign Up / Log In",
+    "myPoems": "Your Poems",
+    "newPoem": "New Poem",
+    "untitledPoem": "Untitled",
+    "deletePoem": "Delete Poem",
+    "deletePoemConfirm": "Are you sure you want to delete this poem?",
+    "deleteFailed": "Failed to delete poem",
+    "emptyState": "No poems yet. Create one!",
+    "settings": "Settings",
+    "language": "Language",
+    "signOut": "Sign Out",
+    "open": "Open"
+  },
+  "editor": {
+    "untitledPoem": "Untitled Poem",
+    "tapToEdit": "Tap to edit",
+    "sharePoem": "Share Poem",
+    "shareError": "Failed to share image"
+  }
+}
