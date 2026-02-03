@@ -8,16 +8,16 @@ import { Check, Globe, LogOut, Plus, Trash2, User, X } from 'lucide-react-native
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    Alert,
-    Animated,
-    Dimensions,
-    FlatList,
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    useWindowDimensions,
-    View
+  Alert,
+  Animated,
+  Dimensions,
+  FlatList,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PoemThumbnail from './PoemThumbnail';
@@ -209,6 +209,13 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
         ]}
       >
         <View style={styles.header}>
+          <TouchableOpacity 
+            onPress={() => setShowLanguages(true)} 
+            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+            style={styles.settingsButtonLeft}
+          >
+            <Globe size={24} color="#374151" />
+          </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('drawer.title')}</Text>
           <TouchableOpacity 
             onPress={onClose} 
@@ -249,10 +256,6 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
               <Text style={styles.userEmail} numberOfLines={1}>
                 {user.email}
               </Text>
-              
-              <TouchableOpacity style={styles.settingsButton} onPress={() => setShowLanguages(true)}>
-                <Globe size={18} color="#374151" />
-              </TouchableOpacity>
               
               <TouchableOpacity style={styles.signOutButtonSmall} onPress={handleSignOut}>
                 <LogOut size={18} color="#EF4444" />
@@ -427,6 +430,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     borderRadius: 20,
   },
+  settingsButtonLeft: {
+    position: 'absolute',
+    left: 20,
+    top: 16,
+    padding: 4,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 20,
+  },
   guestContainer: {
     flex: 1,
     alignItems: 'center',
@@ -503,12 +514,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#374151',
     fontWeight: '500',
-  },
-  settingsButton: {
-    padding: 8,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-    marginRight: 8,
   },
   signOutButtonSmall: {
     padding: 8,
