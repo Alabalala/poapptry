@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Keyboard, NativeScrollEvent, NativeSyntheticEvent, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePoem } from '../../context/PoemContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const FONTS = [
   'Crimson Text',
@@ -31,6 +32,7 @@ const COLORS = [
 export default function FontToolbar({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const { width } = useWindowDimensions();
   const { t } = useTranslation();
+  const { colors } = useTheme();
   
   if (!visible) return null;
 
@@ -42,17 +44,15 @@ export default function FontToolbar({ visible, onClose }: { visible: boolean; on
         right: 'auto',
         borderTopLeftRadius: 24, 
         borderTopRightRadius: 24,
-        // On wide screens, we might want it to look more like a card if it's not attached to bottom, 
-        // but user asked for "at least 50% width", likely still attached to bottom.
       } 
     : { left: 0, right: 0 };
 
   return (
-    <View style={[styles.container, containerStyle]}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('editor.textStyle')}</Text>
+    <View style={[styles.container, containerStyle, { backgroundColor: colors.surface }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>{t('editor.textStyle')}</Text>
         <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Text style={styles.closeButton}>{t('common.done')}</Text>
+          <Text style={[styles.closeButton, { color: colors.primary }]}>{t('common.done')}</Text>
         </TouchableOpacity>
       </View>
       <FontPanelContent onClose={onClose} />
@@ -63,6 +63,7 @@ export default function FontToolbar({ visible, onClose }: { visible: boolean; on
 export function FontPanelContent({ scrollContentStyle, onClose }: { scrollContentStyle?: any, onClose?: () => void }) {
   const { width } = useWindowDimensions();
   const { activeConfig, updateConfig, addTextBox, pages, selectedTextBoxId, updateTextBox } = usePoem();
+  const { colors, theme } = useTheme();
   
   // Determine if arrows are needed
   // On wide screens > 768, panel is 50% width. Otherwise full width.
@@ -91,8 +92,6 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
   };
 
   // Helper to safely execute commands despite deprecation
-  // document.execCommand is deprecated but is currently the only native way
-  // to handle contentEditable operations without a heavy external library.
   const safeExecCommand = (command: string, value?: string) => {
     if (typeof document !== 'undefined') {
       (document as any).execCommand(command, false, value);
@@ -107,8 +106,6 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
       // Special handling for Web rich text commands
       if (Platform.OS === 'web') {
         const selection = window.getSelection();
-        // If selection is collapsed (cursor only), we treat it as "Edit Whole Box"
-        // and select all text before applying styles, then collapse back.
         const shouldSelectAll = selection && selection.isCollapsed;
 
         if (shouldSelectAll) {
@@ -126,13 +123,9 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
             safeExecCommand(align);
         }
         if (updates.fontSize) {
-            // Map to 1-7 scale for execCommand (approximate mapping)
-            // 1: 10px, 2: 13px, 3: 16px, 4: 18px, 5: 24px, 6: 32px, 7: 48px
-            // Small (16) -> 3, Medium (18) -> 4, Large (22) -> 5 (approx 24)
             const size = updates.fontSize === 'small' ? '3' : updates.fontSize === 'medium' ? '4' : '5';
             safeExecCommand('fontSize', size);
             
-            // Re-apply current font to prevent it from resetting to generic
             const currentFont = updates.fontId || activeConfig.fontId;
             if (currentFont) {
               safeExecCommand('fontName', currentFont);
@@ -160,14 +153,12 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
       if (Object.keys(styleUpdates).length > 0) {
         updateTextBox(activePageId, selectedTextBoxId, { style: styleUpdates });
       }
-      // Also update global config so next box matches
       updateConfig(updates);
     } else {
       updateConfig(updates);
     }
   };
 
-  // Calculate default padding if not provided - We use a spacer view now instead of paddingBottom
   const paddingBottom = scrollContentStyle?.paddingBottom ?? 0;
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -185,9 +176,9 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
   if (!selectedTextBoxId) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-        <Text style={{ color: '#6B7280', fontSize: 16, marginBottom: 20 }}>Select a text box to edit style</Text>
+        <Text style={{ color: colors.textSecondary, fontSize: 16, marginBottom: 20 }}>Select a text box to edit style</Text>
         <TouchableOpacity
-            style={[styles.actionButton, { width: 'auto', paddingHorizontal: 24 }]}
+            style={[styles.actionButton, { width: 'auto', paddingHorizontal: 24, backgroundColor: colors.primary }]}
             onPress={handleAddTextBox}
           >
             <Plus size={20} color="#FFF" />
@@ -203,7 +194,7 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={true} 
         contentContainerStyle={[styles.scrollContent, scrollContentStyle || { paddingBottom }, { flexGrow: 1 }]}
-        indicatorStyle="black"
+        indicatorStyle={theme === 'dark' ? 'white' : 'black'}
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
@@ -211,7 +202,7 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
         {/* Actions */}
         <View style={{ marginBottom: 20 }}>
           <TouchableOpacity
-            style={styles.actionButton}
+            style={[styles.actionButton, { backgroundColor: colors.primary }]}
             onPress={handleAddTextBox}
           >
             <Plus size={20} color="#FFF" />
@@ -220,11 +211,11 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
         </View>
 
         {/* Font Family */}
-        <SectionLabel label="Font" />
+        <SectionLabel label="Font" color={colors.textSecondary} />
         <View style={styles.fontScrollContainer}>
           {showArrows && (
-            <TouchableOpacity onPress={() => scrollFonts('left')} style={styles.scrollArrow}>
-              <ChevronLeft size={24} color="#374151" />
+            <TouchableOpacity onPress={() => scrollFonts('left')} style={[styles.scrollArrow, { backgroundColor: colors.surfaceHighlight }]}>
+              <ChevronLeft size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
           <ScrollView 
@@ -243,17 +234,18 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
                 onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
                 style={[
                   styles.fontOption,
-                  activeConfig.fontId === font && styles.activeOption
+                  { borderColor: colors.border, backgroundColor: colors.surface },
+                  activeConfig.fontId === font && { borderColor: colors.primary, backgroundColor: colors.surfaceHighlight }
                 ]}
               >
-                <Text style={[styles.fontPreview, { fontFamily: font === 'PressStart2P' ? 'PressStart2P' : font }]}>Ag</Text>
-                <Text style={styles.fontName}>{font === 'PressStart2P' ? 'Press Start 2P' : font}</Text>
+                <Text style={[styles.fontPreview, { fontFamily: font === 'PressStart2P' ? 'PressStart2P' : font, color: colors.text }]}>Ag</Text>
+                <Text style={[styles.fontName, { color: colors.textSecondary }]}>{font === 'PressStart2P' ? 'Press Start 2P' : font}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
           {showArrows && (
-            <TouchableOpacity onPress={() => scrollFonts('right')} style={styles.scrollArrow}>
-              <ChevronRight size={24} color="#374151" />
+            <TouchableOpacity onPress={() => scrollFonts('right')} style={[styles.scrollArrow, { backgroundColor: colors.surfaceHighlight }]}>
+              <ChevronRight size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -261,7 +253,7 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
         {/* Font Size & Line Spacing */}
         <View style={styles.row}>
           <View style={styles.halfCol}>
-            <SectionLabel label="Size" />
+            <SectionLabel label="Size" color={colors.textSecondary} />
             <View style={styles.buttonGroup}>
               {(['small', 'medium', 'large'] as const).map((size) => (
                 <TouchableOpacity
@@ -271,139 +263,143 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
                   onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
                   style={[
                     styles.groupButton,
-                activeConfig.fontSize === size && styles.activeGroupButton
-              ]}
-            >
-              <Text style={[
-                styles.groupButtonText, 
-                activeConfig.fontSize === size && styles.activeGroupButtonText,
-                { fontSize: size === 'small' ? 12 : size === 'medium' ? 16 : 20 }
-              ]}>A</Text>
-            </TouchableOpacity>
-          ))}
+                    { borderColor: colors.border, backgroundColor: colors.surface },
+                    activeConfig.fontSize === size && { backgroundColor: colors.primary, borderColor: colors.primary }
+                  ]}
+                >
+                  <Text style={[
+                    styles.groupButtonText, 
+                    { color: colors.text },
+                    activeConfig.fontSize === size && { color: '#FFF' },
+                    { fontSize: size === 'small' ? 12 : size === 'medium' ? 16 : 20 }
+                  ]}>A</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+          
+          <View style={styles.halfCol}>
+            <SectionLabel label="Spacing" color={colors.textSecondary} />
+            <View style={styles.buttonGroup}>
+              {[1.0, 1.5, 1.8].map((spacing) => (
+                <TouchableOpacity
+                  key={spacing}
+                  onPress={() => handleUpdate({ lineSpacing: spacing })}
+                  // @ts-ignore - Web specific prop
+                  onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
+                  style={[
+                    styles.groupButton,
+                    { borderColor: colors.border, backgroundColor: colors.surface },
+                    activeConfig.lineSpacing === spacing && { backgroundColor: colors.primary, borderColor: colors.primary }
+                  ]}
+                >
+                  <Text style={[
+                    styles.groupButtonText,
+                    { color: colors.text },
+                    activeConfig.lineSpacing === spacing && { color: '#FFF' }
+                  ]}>{spacing === 1.0 ? '1.0' : spacing === 1.5 ? '1.5' : '2.0'}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
         </View>
-      </View>
-      
-      <View style={styles.halfCol}>
-        <SectionLabel label="Spacing" />
-        <View style={styles.buttonGroup}>
-          {[1.0, 1.5, 1.8].map((spacing) => (
+
+        {/* Alignment Horizontal */}
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <SectionLabel label="Horizontal Align" color={colors.textSecondary} />
+            <View style={styles.buttonGroup}>
+              <TouchableOpacity
+                onPress={() => handleUpdate({ textAlign: 'left' })}
+                // @ts-ignore - Web specific prop
+                onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
+                style={[styles.groupButton, { borderColor: colors.border, backgroundColor: colors.surface }, activeConfig.textAlign === 'left' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+              >
+                <AlignLeft size={18} color={activeConfig.textAlign === 'left' ? '#FFF' : colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleUpdate({ textAlign: 'center' })}
+                // @ts-ignore - Web specific prop
+                onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
+                style={[styles.groupButton, { borderColor: colors.border, backgroundColor: colors.surface }, activeConfig.textAlign === 'center' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+              >
+                <AlignCenter size={18} color={activeConfig.textAlign === 'center' ? '#FFF' : colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleUpdate({ textAlign: 'right' })}
+                // @ts-ignore - Web specific prop
+                onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
+                style={[styles.groupButton, { borderColor: colors.border, backgroundColor: colors.surface }, activeConfig.textAlign === 'right' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+              >
+                <AlignRight size={18} color={activeConfig.textAlign === 'right' ? '#FFF' : colors.text} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        {/* Style */}
+        <SectionLabel label="Style" color={colors.textSecondary} />
+        <View style={[styles.buttonGroup, { marginBottom: 20 }]}>
+          {fontCaps.supportsBold && (
             <TouchableOpacity
-              key={spacing}
-              onPress={() => handleUpdate({ lineSpacing: spacing })}
+              onPress={() => handleUpdate({ isBold: !activeConfig.isBold })}
               // @ts-ignore - Web specific prop
               onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
-              style={[
-                styles.groupButton,
-                activeConfig.lineSpacing === spacing && styles.activeGroupButton
-              ]}
+              style={[styles.groupButton, { borderColor: colors.border, backgroundColor: colors.surface }, activeConfig.isBold && { backgroundColor: colors.primary, borderColor: colors.primary }]}
             >
-              <Text style={[
-                styles.groupButtonText,
-                activeConfig.lineSpacing === spacing && styles.activeGroupButtonText
-              ]}>{spacing === 1.0 ? '1.0' : spacing === 1.5 ? '1.5' : '2.0'}</Text>
+              <Bold size={18} color={activeConfig.isBold ? '#FFF' : colors.text} />
             </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-    </View>
-
-    {/* Alignment Horizontal */}
-    <View style={styles.row}>
-      <View style={{ flex: 1 }}>
-        <SectionLabel label="Horizontal Align" />
-        <View style={styles.buttonGroup}>
+          )}
+          {fontCaps.supportsItalic && (
+            <TouchableOpacity
+              onPress={() => handleUpdate({ isItalic: !activeConfig.isItalic })}
+              // @ts-ignore - Web specific prop
+              onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
+              style={[styles.groupButton, { borderColor: colors.border, backgroundColor: colors.surface }, activeConfig.isItalic && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+            >
+              <Italic size={18} color={activeConfig.isItalic ? '#FFF' : colors.text} />
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
-            onPress={() => handleUpdate({ textAlign: 'left' })}
+            onPress={() => handleUpdate({ isUnderline: !activeConfig.isUnderline })}
             // @ts-ignore - Web specific prop
             onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
-            style={[styles.groupButton, activeConfig.textAlign === 'left' && styles.activeGroupButton]}
+            style={[styles.groupButton, { borderColor: colors.border, backgroundColor: colors.surface }, activeConfig.isUnderline && { backgroundColor: colors.primary, borderColor: colors.primary }]}
           >
-            <AlignLeft size={18} color={activeConfig.textAlign === 'left' ? '#FFF' : '#374151'} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleUpdate({ textAlign: 'center' })}
-            // @ts-ignore - Web specific prop
-            onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
-            style={[styles.groupButton, activeConfig.textAlign === 'center' && styles.activeGroupButton]}
-          >
-            <AlignCenter size={18} color={activeConfig.textAlign === 'center' ? '#FFF' : '#374151'} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleUpdate({ textAlign: 'right' })}
-            // @ts-ignore - Web specific prop
-            onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
-            style={[styles.groupButton, activeConfig.textAlign === 'right' && styles.activeGroupButton]}
-          >
-            <AlignRight size={18} color={activeConfig.textAlign === 'right' ? '#FFF' : '#374151'} />
+            <Underline size={18} color={activeConfig.isUnderline ? '#FFF' : colors.text} />
           </TouchableOpacity>
         </View>
-      </View>
-    </View>
 
-    {/* Style */}
-    <SectionLabel label="Style" />
-    <View style={[styles.buttonGroup, { marginBottom: 20 }]}>
-      {fontCaps.supportsBold && (
-        <TouchableOpacity
-          onPress={() => handleUpdate({ isBold: !activeConfig.isBold })}
-          // @ts-ignore - Web specific prop
-          onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
-          style={[styles.groupButton, activeConfig.isBold && styles.activeGroupButton]}
-        >
-          <Bold size={18} color={activeConfig.isBold ? '#FFF' : '#374151'} />
-        </TouchableOpacity>
-      )}
-      {fontCaps.supportsItalic && (
-        <TouchableOpacity
-          onPress={() => handleUpdate({ isItalic: !activeConfig.isItalic })}
-          // @ts-ignore - Web specific prop
-          onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
-          style={[styles.groupButton, activeConfig.isItalic && styles.activeGroupButton]}
-        >
-          <Italic size={18} color={activeConfig.isItalic ? '#FFF' : '#374151'} />
-        </TouchableOpacity>
-      )}
-      <TouchableOpacity
-        onPress={() => handleUpdate({ isUnderline: !activeConfig.isUnderline })}
-        // @ts-ignore - Web specific prop
-        onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
-        style={[styles.groupButton, activeConfig.isUnderline && styles.activeGroupButton]}
-      >
-        <Underline size={18} color={activeConfig.isUnderline ? '#FFF' : '#374151'} />
-      </TouchableOpacity>
-    </View>
-
-    {/* Colors */}
-    <SectionLabel label="Color" />
-    <View style={styles.colorRow}>
-      {COLORS.map((color) => {
-        const isLight = ['#FFFFFF', '#FEF3C7', '#33FF33'].includes(color);
-        return (
-          <TouchableOpacity
-            key={color}
-            onPress={() => handleUpdate({ inkColor: color })}
-            // @ts-ignore - Web specific prop
-            onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
-            style={[
-              styles.colorCircle,
-              { backgroundColor: color },
-              color === '#FFFFFF' && { borderWidth: 1, borderColor: '#E5E7EB' },
-              activeConfig.inkColor === color && styles.activeColorCircle
-            ]}
-          >
-            {activeConfig.inkColor === color && (
-              <Check size={16} color={isLight ? '#000' : '#FFF'} />
-            )}
-          </TouchableOpacity>
-        );
-      })}
-    </View>
+        {/* Colors */}
+        <SectionLabel label="Color" color={colors.textSecondary} />
+        <View style={styles.colorRow}>
+          {COLORS.map((color) => {
+            const isLight = ['#FFFFFF', '#FEF3C7', '#33FF33'].includes(color);
+            return (
+              <TouchableOpacity
+                key={color}
+                onPress={() => handleUpdate({ inkColor: color })}
+                // @ts-ignore - Web specific prop
+                onMouseDown={Platform.OS === 'web' ? (e) => e.preventDefault() : undefined}
+                style={[
+                  styles.colorCircle,
+                  { backgroundColor: color },
+                  color === '#FFFFFF' && { borderWidth: 1, borderColor: '#E5E7EB' },
+                  activeConfig.inkColor === color && styles.activeColorCircle
+                ]}
+              >
+                {activeConfig.inkColor === color && (
+                  <Check size={16} color={isLight ? '#000' : '#FFF'} />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </ScrollView>
 
       {!isScrolledToBottom && (
         <LinearGradient
-          colors={['rgba(255,255,255,0)', 'rgba(255,255,255,1)']}
+          colors={theme === 'dark' ? ['rgba(31,41,55,0)', 'rgba(31,41,55,1)'] : ['rgba(255,255,255,0)', 'rgba(255,255,255,1)']}
           style={[
             styles.gradientOverlay, 
             { bottom: 0, height: Math.max(insets.bottom, 20) + 40 }
@@ -415,8 +411,8 @@ export function FontPanelContent({ scrollContentStyle, onClose }: { scrollConten
   );
 }
 
-function SectionLabel({ label }: { label: string }) {
-  return <Text style={styles.sectionLabel}>{label}</Text>;
+function SectionLabel({ label, color }: { label: string, color?: string }) {
+  return <Text style={[styles.sectionLabel, color && { color }]}>{label}</Text>;
 }
 
 const styles = StyleSheet.create({

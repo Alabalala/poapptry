@@ -1,6 +1,7 @@
 import { Check, Circle, FolderOpen, LucideIcon, Palette, Plus, Share, Trash2, X } from 'lucide-react-native';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 
 
 const ICON_MAP: Record<string, LucideIcon> = {

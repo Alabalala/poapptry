@@ -5,9 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePoem } from '../../context/PoemContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function SignUpPrompt() {
   const { isGuest } = usePoem();
+  const { colors } = useTheme();
   const [isVisible, setIsVisible] = useState(false);
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -71,30 +73,30 @@ export default function SignUpPrompt() {
       }
     ]}>
       <TouchableOpacity 
-        style={styles.content} 
+        style={[styles.content, { backgroundColor: colors.surface, borderColor: colors.border }]} 
         onPress={() => {
           handleClose();
           router.push('/auth');
         }}
         activeOpacity={0.9}
       >
-        <Animated.View style={[styles.iconContainer, { transform: [{ rotate: shakeRotate }] }]}>
+        <Animated.View style={[styles.iconContainer, { backgroundColor: colors.primary, transform: [{ rotate: shakeRotate }] }]}>
           <Save size={20} color="#FFF" />
         </Animated.View>
         <View style={styles.textContainer}>
-          <Text style={styles.text}>
+          <Text style={[styles.text, { color: colors.text }]}>
             {t('auth.saveProgressPrompt')}
           </Text>
         </View>
         <TouchableOpacity 
-          style={styles.closeButton} 
+          style={[styles.closeButton, { backgroundColor: colors.surfaceHighlight }]} 
           onPress={(e) => {
             e.stopPropagation();
             handleClose();
           }}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <X size={16} color="#9CA3AF" />
+          <X size={16} color={colors.textMuted} />
         </TouchableOpacity>
       </TouchableOpacity>
     </Animated.View>

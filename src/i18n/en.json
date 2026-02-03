@@ -38,6 +38,9 @@
     "deleteFailed": "Failed to delete poem",
     "emptyState": "No poems yet. Create one!",
     "settings": "Settings",
+    "appearance": "Appearance",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode",
     "language": "Language",
     "signOut": "Sign Out",
     "open": "Open"

@@ -5,6 +5,7 @@ import DrawerScreen from '@/components/ui/DrawerScreen';
 import SidePanel from '@/components/ui/SidePanel';
 import SignUpPrompt from '@/components/ui/SignUpPrompt';
 import { FONT_CAPABILITIES } from '@/constants/ThemeRegistry';
+import { useTheme } from '@/context/ThemeContext';
 import * as Sharing from 'expo-sharing';
 import html2canvas from 'html2canvas';
 import { Edit2, Menu } from 'lucide-react-native';
@@ -18,6 +19,7 @@ import TopBar from '../components/ui/TopBar';
 import { usePoem } from '../context/PoemContext';
 
 export default function Desk() {
+  const { colors } = useTheme();
   const { 
     isEditing, 
     toggleEditMode, 
@@ -159,7 +161,7 @@ export default function Desk() {
   const editModePaddingBottom = topBarHeight + bottomBarHeight + 40;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.backdrop }]}>
       <DrawerScreen isVisible={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
 
       {/* Top Bar (Visible in Edit Mode) */}
@@ -236,14 +238,14 @@ export default function Desk() {
           {!isEditing && (
             <View style={[styles.viewModeControls, { bottom: Math.max(insets.bottom, 20) }]}>
                <TouchableOpacity 
-                 style={styles.viewModeButton} 
+                 style={[styles.viewModeButton, { backgroundColor: colors.surface }]} 
                  onPress={() => setIsDrawerOpen(true)}
                >
-                 <Menu size={24} color="#374151" />
+                 <Menu size={24} color={colors.textSecondary} />
                </TouchableOpacity>
                
                <TouchableOpacity 
-                 style={[styles.viewModeButton, styles.editButton]} 
+                 style={[styles.viewModeButton, styles.editButton, { backgroundColor: colors.primary }]} 
                  onPress={() => toggleEditMode()}
                >
                  <Edit2 size={24} color="#FFF" />

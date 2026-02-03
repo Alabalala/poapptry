@@ -5,12 +5,13 @@ import { DeviceEventEmitter, Image, PanResponder, Platform, ScrollView, StyleShe
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BOOKMARKS, PAPERS, STAMPS, WASHI } from '../../constants/ThemeRegistry';
 import { usePoem } from '../../context/PoemContext';
+import { useTheme } from '../../context/ThemeContext';
 
 type Tab = 'paper' | 'decor' | 'stamps';
 
 export default function StationeryToolbar({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const insets = useSafeAreaInsets();
-
+  
   if (!visible) return null;
 
   return (
@@ -42,6 +43,7 @@ export function StationeryPanelContent({
   renderHeaderRight?: () => React.ReactNode;
 }) {
   const { activeConfig, updateConfig, addStamp, addWashi, addBookmark } = usePoem();
+  const { colors, theme } = useTheme();
   const [activeTab, setActiveTab] = useState<Tab>('paper');
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
   const insets = useSafeAreaInsets();
@@ -61,13 +63,17 @@ export function StationeryPanelContent({
       {Object.entries(PAPERS).map(([id, source]) => (
         <TouchableOpacity
           key={id}
-          style={[styles.paperOption, activeConfig.paperId === id && styles.activeOption]}
+          style={[
+            styles.paperOption, 
+            { backgroundColor: colors.surfaceHighlight },
+            activeConfig.paperId === id && { borderWidth: 2, borderColor: colors.primary }
+          ]}
           onPress={() => updateConfig({ paperId: id })}
         >
           <Image source={source} style={styles.paperPreview} resizeMode="cover" />
           {activeConfig.paperId === id && (
-            <View style={styles.checkOverlay}>
-              <Check size={20} color="#FFF" />
+            <View style={[styles.checkOverlay, { backgroundColor: colors.text }]}>
+              <Check size={20} color={colors.surface} />
             </View>
           )}
           <Text style={styles.optionLabel}>{id.replace('paper_', '').replace('_', ' ')}</Text>
@@ -90,7 +96,7 @@ export function StationeryPanelContent({
   const renderDecorTab = () => (
     <View>
       <View style={styles.sectionHeader}>
-        <SectionLabel label="Washi Tape" />
+        <SectionLabel label="Washi Tape" color={colors.textSecondary} />
       </View>
       <View style={styles.grid}>
         {Object.entries(WASHI).map(([id, source]) => (
@@ -101,12 +107,13 @@ export function StationeryPanelContent({
             type="washi"
             onPress={() => handleAddDecoration(id, 'washi')}
             onClose={onClose}
+            colors={colors}
           />
         ))}
       </View>
 
       <View style={styles.sectionHeader}>
-        <SectionLabel label="Bookmarks" />
+        <SectionLabel label="Bookmarks" color={colors.textSecondary} />
       </View>
       <View style={styles.bookmarkGrid}>
         {Object.entries(BOOKMARKS).map(([id, source]) => (
@@ -117,6 +124,7 @@ export function StationeryPanelContent({
             type="bookmark"
             onPress={() => handleAddDecoration(id, 'bookmark')}
             onClose={onClose}
+            colors={colors}
           />
         ))}
       </View>
@@ -133,46 +141,51 @@ export function StationeryPanelContent({
           type="stamp"
           onPress={() => handleAddDecoration(id, 'stamp')}
           onClose={onClose}
+          colors={colors}
         />
       ))}
     </View>
   );
 
   return (
-    <View style={{ flex: 1 }}>
-      <View style={styles.header}>
-        <View style={styles.tabs}>
+    <View style={{ flex: 1, backgroundColor: colors.surface }}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={[styles.tabs, { backgroundColor: colors.surfaceHighlight }]}>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'paper' && styles.activeTab]}
+            style={[styles.tab, activeTab === 'paper' && [styles.activeTab, { backgroundColor: colors.surface }]]}
             onPress={() => setActiveTab('paper')}
           >
-            <ImageIcon size={16} color={activeTab === 'paper' ? '#111827' : '#6B7280'} />
-            <Text style={[styles.tabText, activeTab === 'paper' && styles.activeTabText]}>Paper</Text>
+            <ImageIcon size={16} color={activeTab === 'paper' ? colors.text : colors.textSecondary} />
+            <Text style={[styles.tabText, { color: colors.textSecondary }, activeTab === 'paper' && { color: colors.text, fontWeight: '600' }]}>Paper</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'decor' && styles.activeTab]}
+            style={[styles.tab, activeTab === 'decor' && [styles.activeTab, { backgroundColor: colors.surface }]]}
             onPress={() => setActiveTab('decor')}
           >
-            <Sparkles size={16} color={activeTab === 'decor' ? '#111827' : '#6B7280'} />
-            <Text style={[styles.tabText, activeTab === 'decor' && styles.activeTabText]}>Decor</Text>
+            <Sparkles size={16} color={activeTab === 'decor' ? colors.text : colors.textSecondary} />
+            <Text style={[styles.tabText, { color: colors.textSecondary }, activeTab === 'decor' && { color: colors.text, fontWeight: '600' }]}>Decor</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'stamps' && styles.activeTab]}
+            style={[styles.tab, activeTab === 'stamps' && [styles.activeTab, { backgroundColor: colors.surface }]]}
             onPress={() => setActiveTab('stamps')}
           >
-            <StampIcon size={16} color={activeTab === 'stamps' ? '#111827' : '#6B7280'} />
-            <Text style={[styles.tabText, activeTab === 'stamps' && styles.activeTabText]}>Stamps</Text>
+            <StampIcon size={16} color={activeTab === 'stamps' ? colors.text : colors.textSecondary} />
+            <Text style={[styles.tabText, { color: colors.textSecondary }, activeTab === 'stamps' && { color: colors.text, fontWeight: '600' }]}>Stamps</Text>
           </TouchableOpacity>
         </View>
 
-        {renderHeaderRight && renderHeaderRight()}
+        {renderHeaderRight && (
+           <View style={styles.headerButton}>
+             {renderHeaderRight()}
+           </View>
+        )}
       </View>
 
       <ScrollView 
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={true} 
         contentContainerStyle={[styles.scrollContent, scrollContentStyle || { paddingBottom }, { flexGrow: 1 }]}
-        indicatorStyle="black"
+        indicatorStyle={theme === 'dark' ? 'white' : 'black'}
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
@@ -184,7 +197,7 @@ export function StationeryPanelContent({
 
       {!isScrolledToBottom && (
         <LinearGradient
-          colors={['rgba(255,255,255,0)', 'rgba(255,255,255,1)']}
+          colors={theme === 'dark' ? ['rgba(31,41,55,0)', 'rgba(31,41,55,1)'] : ['rgba(255,255,255,0)', 'rgba(255,255,255,1)']}
           style={[
             styles.gradientOverlay, 
             { bottom: 0, height: Math.max(insets.bottom, 20) + 40 }
@@ -196,11 +209,11 @@ export function StationeryPanelContent({
   );
 }
 
-function SectionLabel({ label }: { label: string }) {
-  return <Text style={styles.sectionLabel}>{label}</Text>;
+function SectionLabel({ label, color }: { label: string, color?: string }) {
+  return <Text style={[styles.sectionLabel, color && { color }]}>{label}</Text>;
 }
 
-function DraggableOption({ id, source, type, onPress, onClose }: { id: string, source: any, type: 'stamp' | 'washi' | 'bookmark', onPress: () => void, onClose: () => void }) {
+function DraggableOption({ id, source, type, onPress, onClose, colors }: { id: string, source: any, type: 'stamp' | 'washi' | 'bookmark', onPress: () => void, onClose: () => void, colors: any }) {
   const { addStamp, addWashi, addBookmark, setDraggedStamp, getPaperBounds } = usePoem();
   const isDraggingRef = useRef(false);
   
@@ -268,10 +281,18 @@ function DraggableOption({ id, source, type, onPress, onClose }: { id: string, s
     })
   ).current;
 
+  const getOptionStyle = () => {
+    const baseStyle = type === 'washi' ? styles.washiOption : type === 'bookmark' ? styles.bookmarkOption : styles.stampOption;
+    return [
+      baseStyle,
+      { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }
+    ];
+  };
+
   return (
     <View 
       {...panResponder.panHandlers}
-      style={type === 'washi' ? styles.washiOption : type === 'bookmark' ? styles.bookmarkOption : styles.stampOption}
+      style={getOptionStyle()}
     >
       <TouchableOpacity
         style={{ flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center' }}

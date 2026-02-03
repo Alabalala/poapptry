@@ -38,6 +38,9 @@
     "deleteFailed": "Error al eliminar el poema",
     "emptyState": "Aún no hay poemas. ¡Crea uno!",
     "settings": "Ajustes",
+    "appearance": "Apariencia",
+    "darkMode": "Modo Oscuro",
+    "lightMode": "Modo Claro",
     "language": "Idioma",
     "signOut": "Cerrar Sesión",
     "open": "Abrir"

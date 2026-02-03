@@ -1,10 +1,11 @@
 import { useAuth } from '@/context/AuthContext';
 import { useLibrary } from '@/context/LibraryContext';
 import { usePoem } from '@/context/PoemContext';
+import { useTheme } from '@/context/ThemeContext';
 import { PoemData, poemService } from '@/services/poemService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { Check, Globe, LogOut, Plus, Trash2, User, X } from 'lucide-react-native';
+import { Check, LogOut, Moon, Plus, Settings, Sun, Trash2, User, X } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -14,6 +15,7 @@ import {
   FlatList,
   Modal,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   useWindowDimensions,
@@ -64,6 +66,7 @@ interface DrawerScreenProps {
 
 export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) {
   const { t, i18n } = useTranslation();
+  const { theme, colors, toggleTheme } = useTheme();
   const [showLanguages, setShowLanguages] = useState(false);
 
   const LANGUAGES = [
@@ -195,7 +198,7 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
   return (
     <View style={[styles.overlay, { pointerEvents: isVisible ? 'auto' : 'none' }]}>
       {/* Backdrop (Solid background for full screen) */}
-      <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]} />
+      <Animated.View style={[styles.backdrop, { opacity: fadeAnim, backgroundColor: colors.backdrop }]} />
 
       {/* Drawer */}
       <Animated.View 
@@ -205,38 +208,39 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
             transform: [{ translateX: slideAnim }],
             paddingTop: insets.top,
             paddingBottom: insets.bottom,
+            backgroundColor: colors.background
           }
         ]}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
           <TouchableOpacity 
             onPress={() => setShowLanguages(true)} 
             hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
-            style={styles.settingsButtonLeft}
+            style={[styles.settingsButtonLeft, { backgroundColor: colors.surfaceHighlight }]}
           >
-            <Globe size={24} color="#374151" />
+            <Settings size={24} color={colors.textSecondary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t('drawer.title')}</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>{t('drawer.title')}</Text>
           <TouchableOpacity 
             onPress={onClose} 
             hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
-            style={styles.closeButton}
+            style={[styles.closeButton, { backgroundColor: colors.surfaceHighlight }]}
           >
-            <X size={24} color="#374151" />
+            <X size={24} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
         {!user ? (
           <View style={styles.guestContainer}>
-            <View style={styles.guestIconCircle}>
-              <User size={60} color="#3B82F6" />
+            <View style={[styles.guestIconCircle, { backgroundColor: colors.primaryLight }]}>
+              <User size={60} color={colors.primary} />
             </View>
-            <Text style={styles.guestTitle}>{t('drawer.guestTitle')}</Text>
-            <Text style={styles.guestMessage}>
+            <Text style={[styles.guestTitle, { color: colors.text }]}>{t('drawer.guestTitle')}</Text>
+            <Text style={[styles.guestMessage, { color: colors.textSecondary }]}>
               {t('drawer.guestMessage')}
             </Text>
             <TouchableOpacity 
-              style={styles.authButton}
+              style={[styles.authButton, { backgroundColor: colors.primary }]}
               onPress={() => {
                 onClose();
                 router.push('/auth');
@@ -247,25 +251,25 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
           </View>
         ) : (
           <>
-            <View style={styles.userInfo}>
-              <View style={styles.userAvatar}>
+            <View style={[styles.userInfo, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+              <View style={[styles.userAvatar, { backgroundColor: colors.primary }]}>
                 <Text style={styles.userInitials}>
                   {user.email ? user.email.substring(0, 2).toUpperCase() : 'ME'}
                 </Text>
               </View>
-              <Text style={styles.userEmail} numberOfLines={1}>
+              <Text style={[styles.userEmail, { color: colors.textSecondary }]} numberOfLines={1}>
                 {user.email}
               </Text>
               
-              <TouchableOpacity style={styles.signOutButtonSmall} onPress={handleSignOut}>
-                <LogOut size={18} color="#EF4444" />
+              <TouchableOpacity style={[styles.signOutButtonSmall, { backgroundColor: colors.surfaceHighlight }]} onPress={handleSignOut}>
+                <LogOut size={18} color={colors.error} />
               </TouchableOpacity>
             </View>
 
             <View style={styles.poemsListContainer}>
               <View style={styles.listHeader}>
-                <Text style={styles.listTitle}>{t('drawer.myPoems')} ({poems.length})</Text>
-                <TouchableOpacity onPress={handleNewPoem} style={styles.newPoemButton}>
+                <Text style={[styles.listTitle, { color: colors.text }]}>{t('drawer.myPoems')} ({poems.length})</Text>
+                <TouchableOpacity onPress={handleNewPoem} style={[styles.newPoemButton, { backgroundColor: colors.primary }]}>
                   <Plus size={16} color="#FFF" />
                   <Text style={styles.newPoemText}>{t('drawer.newPoem')}</Text>
                 </TouchableOpacity>
@@ -279,7 +283,7 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
                 </View>
               ) : poems.length === 0 ? (
                 <View style={styles.emptyState}>
-                  <Text style={styles.emptyStateText}>{t('drawer.emptyState')}</Text>
+                  <Text style={[styles.emptyStateText, { color: colors.textMuted }]}>{t('drawer.emptyState')}</Text>
                 </View>
               ) : (
                 <FlatList
@@ -305,8 +309,8 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
                         
                         {/* Overlay Gradient or Tint if active? */}
                         {poemId === item.id && (
-                          <View style={styles.activeOverlay}>
-                             <View style={styles.activeBadge}>
+                          <View style={[styles.activeOverlay, { borderColor: colors.primary, backgroundColor: colors.primaryLight }]}>
+                             <View style={[styles.activeBadge, { backgroundColor: colors.primary }]}>
                                <Text style={styles.activeBadgeText}>{t('drawer.open')}</Text>
                              </View>
                           </View>
@@ -318,16 +322,16 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
                           hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
                         >
                           <View style={styles.deleteButtonBg}>
-                             <Trash2 size={14} color="#EF4444" />
+                             <Trash2 size={14} color={colors.error} />
                           </View>
                         </TouchableOpacity>
                       </View>
                       
                       <View style={styles.poemInfo}>
-                        <Text style={styles.poemTitle} numberOfLines={1}>
+                        <Text style={[styles.poemTitle, { color: colors.textSecondary }]} numberOfLines={1}>
                           {item.title || t('drawer.untitledPoem')}
                         </Text>
-                        <Text style={styles.poemDate}>
+                        <Text style={[styles.poemDate, { color: colors.textMuted }]}>
                           {new Date(item.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                         </Text>
                       </View>
@@ -340,7 +344,7 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
         )}
       </Animated.View>
 
-      {/* Language Selection Modal */}
+      {/* Settings Modal (Languages + Theme) */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -348,34 +352,56 @@ export default function DrawerScreen({ isVisible, onClose }: DrawerScreenProps) 
         onRequestClose={() => setShowLanguages(false)}
       >
         <TouchableOpacity 
-          style={styles.modalOverlay} 
+          style={[styles.modalOverlay, { backgroundColor: colors.overlay }]} 
           activeOpacity={1} 
           onPress={() => setShowLanguages(false)}
         >
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t('drawer.language')}</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('drawer.settings')}</Text>
               <TouchableOpacity onPress={() => setShowLanguages(false)}>
-                <X size={20} color="#6B7280" />
+                <X size={20} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
             
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('drawer.appearance')}</Text>
+            <TouchableOpacity 
+              style={[styles.optionRow, { borderBottomColor: colors.border }]} 
+              onPress={toggleTheme}
+              activeOpacity={0.7}
+            >
+              <View style={styles.optionLeft}>
+                 {theme === 'dark' ? <Moon size={20} color={colors.text} /> : <Sun size={20} color={colors.text} />}
+                 <Text style={[styles.optionText, { color: colors.text }]}>
+                   {theme === 'dark' ? t('drawer.darkMode') : t('drawer.lightMode')}
+                 </Text>
+              </View>
+              <Switch 
+                value={theme === 'dark'} 
+                onValueChange={toggleTheme} 
+                trackColor={{ false: '#767577', true: colors.primary }}
+                thumbColor={theme === 'dark' ? '#f4f3f4' : '#f4f3f4'}
+              />
+            </TouchableOpacity>
+
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary, marginTop: 20 }]}>{t('drawer.language')}</Text>
             {LANGUAGES.map((lang) => (
               <TouchableOpacity 
                 key={lang.code} 
                 style={[
                   styles.languageOption,
-                  i18n.language === lang.code && styles.languageOptionActive
+                  i18n.language === lang.code && { backgroundColor: colors.primaryLight }
                 ]}
                 onPress={() => changeLanguage(lang.code)}
               >
                 <Text style={[
                   styles.languageText,
-                  i18n.language === lang.code && styles.languageTextActive
+                  { color: colors.textSecondary },
+                  i18n.language === lang.code && { color: colors.primary, fontWeight: '600' }
                 ]}>
                   {lang.label}
                 </Text>
-                {i18n.language === lang.code && <Check size={20} color="#3B82F6" />}
+                {i18n.language === lang.code && <Check size={20} color={colors.primary} />}
               </TouchableOpacity>
             ))}
           </View>
@@ -673,5 +699,29 @@ const styles = StyleSheet.create({
   languageTextActive: {
     color: '#3B82F6',
     fontWeight: '600',
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  optionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    marginBottom: 10,
+  },
+  optionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 });

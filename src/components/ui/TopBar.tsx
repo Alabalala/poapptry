@@ -5,10 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePoem } from '../../context/PoemContext';
+import { useTheme } from '../../context/ThemeContext';
 import PoemActionsMenu from './PoemActionsMenu';
 
 export default function TopBar({ onBack, isLargeScreen, onShareImage }: { onBack?: () => void; isLargeScreen?: boolean; onShareImage?: () => void }) {
   const { title, setTitle, isEditing, isGuest } = usePoem();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
@@ -17,43 +19,43 @@ export default function TopBar({ onBack, isLargeScreen, onShareImage }: { onBack
   if (!isEditing) return null;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background, borderBottomColor: colors.border }]}>
       <View style={styles.barContent}>
         {isLargeScreen && (
           <TouchableOpacity 
             onPress={onBack || (() => router.back())} 
-            style={styles.backButton}
+            style={[styles.backButton, { backgroundColor: colors.surfaceHighlight }]}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <FolderOpen size={24} color="#374151" />
+            <FolderOpen size={24} color={colors.textSecondary} />
           </TouchableOpacity>
         )}
         
         <TextInput
           value={title}
           onChangeText={setTitle}
-          style={styles.titleInput }
+          style={[styles.titleInput, { color: colors.text }]}
           placeholder={t('editor.untitledPoem')}
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.textMuted}
         />
         
         <View style={styles.rightActions}>
           {isGuest && (
             <TouchableOpacity 
-              style={styles.signupButton}
+              style={[styles.signupButton, { backgroundColor: colors.primaryLight }]}
               onPress={() => router.push('/auth')}
             >
-              <UserPlus size={20} color="#3B82F6" />
-              <Text style={styles.signupText}>{t('common.save')}</Text>
+              <UserPlus size={20} color={colors.primary} />
+              <Text style={[styles.signupText, { color: colors.primary }]}>{t('common.save')}</Text>
             </TouchableOpacity>
           )}
 
           <TouchableOpacity 
-            style={styles.menuButton}
+            style={[styles.menuButton, { backgroundColor: colors.surfaceHighlight }]}
             onPress={() => setMenuVisible(true)}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <MoreVertical size={24} color="#374151" />
+            <MoreVertical size={24} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
       </View>

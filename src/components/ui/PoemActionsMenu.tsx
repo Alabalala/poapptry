@@ -1,3 +1,4 @@
+import { useTheme } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import { Download, Eraser, Share2, Trash2 } from 'lucide-react-native';
 import React, { useState } from 'react';
@@ -16,6 +17,7 @@ interface PoemActionsMenuProps {
 
 export default function PoemActionsMenu({ visible, onClose, onShareImage }: PoemActionsMenuProps) {
   const { removeAllDecorations, resetPoem, title, pages } = usePoem();
+  const { colors } = useTheme();
   const { showToast } = useToast();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();

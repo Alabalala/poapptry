@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Keyboard, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePoem } from '../../context/PoemContext';
+import { useTheme } from '../../context/ThemeContext';
 import FontToolbar from './FontToolbar';
 import StationeryToolbar from './StationeryToolbar';
 
@@ -17,6 +18,7 @@ interface BottomToolbarProps {
 export default function BottomToolbar({ onOpenDrawer, activeToolbar, setActiveToolbar, isLargeScreen }: BottomToolbarProps) {
   const { isEditing } = usePoem();
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
   if (!isEditing || isLargeScreen) return null;
@@ -31,23 +33,26 @@ export default function BottomToolbar({ onOpenDrawer, activeToolbar, setActiveTo
   return (
     <>
       <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 20) }]}>
-        <View style={styles.pill}>
+        <View style={[styles.pill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <ToolbarButton 
-            icon={<FolderOpen size={18} color="#4B5563" />} 
+            icon={<FolderOpen size={18} color={colors.textSecondary} />} 
             label={t('editor.drawer')} 
             onPress={onOpenDrawer} 
+            colors={colors}
           />
           <ToolbarButton 
-            icon={<Palette size={18} color={activeToolbar === 'stationery' ? "#3B82F6" : "#4B5563"} />} 
+            icon={<Palette size={18} color={activeToolbar === 'stationery' ? colors.primary : colors.textSecondary} />} 
             label={t('editor.stationery')} 
             isActive={activeToolbar === 'stationery'}
             onPress={() => toggleToolbar('stationery')} 
+            colors={colors}
           />
           <ToolbarButton 
-            icon={<Type size={18} color={activeToolbar === 'font' ? "#3B82F6" : "#4B5563"} />} 
+            icon={<Type size={18} color={activeToolbar === 'font' ? colors.primary : colors.textSecondary} />} 
             label={t('editor.font')} 
             isActive={activeToolbar === 'font'}
             onPress={() => toggleToolbar('font')} 
+            colors={colors}
           />
         </View>
       </View>
@@ -58,11 +63,11 @@ export default function BottomToolbar({ onOpenDrawer, activeToolbar, setActiveTo
   );
 }
 
-function ToolbarButton({ icon, label, onPress, isActive }: { icon: React.ReactNode, label: string, onPress: () => void, isActive?: boolean }) {
+function ToolbarButton({ icon, label, onPress, isActive, colors }: { icon: React.ReactNode, label: string, onPress: () => void, isActive?: boolean, colors: any }) {
   return (
     <TouchableOpacity onPress={onPress} style={styles.button} activeOpacity={0.7}>
       {icon}
-      <Text style={[styles.label, isActive && styles.activeLabel]}>{label}</Text>
+      <Text style={[styles.label, { color: colors.textSecondary }, isActive && { color: colors.primary }]}>{label}</Text>
     </TouchableOpacity>
   );
 }

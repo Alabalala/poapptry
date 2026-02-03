@@ -38,8 +38,11 @@
     "deleteFailed": "Échec de la suppression du poème",
     "emptyState": "Pas encore de poèmes. Créez-en un !",
     "settings": "Paramètres",
+    "appearance": "Apparence",
+    "darkMode": "Mode Sombre",
+    "lightMode": "Mode Clair",
     "language": "Langue",
-    "signOut": "Se déconnecter",
+    "signOut": "Déconnexion",
     "open": "Ouvrir"
   },
   "editor": {

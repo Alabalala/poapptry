@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 
 interface ConfirmationModalProps {
   visible: boolean;
@@ -24,6 +25,7 @@ export default function ConfirmationModal({
   variant = 'default',
 }: ConfirmationModalProps) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const effectiveConfirmText = confirmText || t('common.confirm');
   const effectiveCancelText = cancelText || t('common.cancel');
 
@@ -37,22 +39,24 @@ export default function ConfirmationModal({
       onRequestClose={onCancel}
     >
       <View style={styles.overlay}>
-        <View style={styles.container}>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.message}>{message}</Text>
+        <View style={[styles.container, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+          <Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text>
           
           <View style={styles.footer}>
             <TouchableOpacity 
-              style={[styles.button, styles.cancelButton]} 
+              style={[styles.button, styles.cancelButton, { backgroundColor: colors.surfaceHighlight }]} 
               onPress={onCancel}
             >
-              <Text style={styles.cancelButtonText}>{effectiveCancelText}</Text>
+              <Text style={[styles.cancelButtonText, { color: colors.text }]}>{effectiveCancelText}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={[
                 styles.button, 
-                variant === 'destructive' ? styles.destructiveButton : styles.confirmButton
+                variant === 'destructive' 
+                  ? [styles.destructiveButton, { backgroundColor: colors.error }] 
+                  : [styles.confirmButton, { backgroundColor: colors.primary }]
               ]} 
               onPress={onConfirm}
             >
