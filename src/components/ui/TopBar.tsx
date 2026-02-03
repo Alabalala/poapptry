@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { ChevronLeft, FolderOpen, MoreVertical, UserPlus } from 'lucide-react-native';
+import { FolderOpen, MoreVertical, UserPlus } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,17 +17,15 @@ export default function TopBar({ onBack, isLargeScreen, onShareImage }: { onBack
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.barContent}>
-        <TouchableOpacity 
-          onPress={onBack || (() => router.back())} 
-          style={styles.backButton}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          {isLargeScreen ? (
+        {isLargeScreen && (
+          <TouchableOpacity 
+            onPress={onBack || (() => router.back())} 
+            style={styles.backButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <FolderOpen size={24} color="#374151" />
-          ) : (
-            <ChevronLeft size={24} color="#374151" />
-          )}
-        </TouchableOpacity>
+          </TouchableOpacity>
+        )}
         
         <TextInput
           value={title}
