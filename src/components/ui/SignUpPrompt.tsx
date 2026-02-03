@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { Save, X } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePoem } from '../../context/PoemContext';
@@ -11,6 +12,7 @@ export default function SignUpPrompt() {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!isGuest) return;
@@ -81,7 +83,7 @@ export default function SignUpPrompt() {
         </Animated.View>
         <View style={styles.textContainer}>
           <Text style={styles.text}>
-            Don&apos;t lose your progress, sign up for free to save your poems
+            {t('auth.saveProgressPrompt')}
           </Text>
         </View>
         <TouchableOpacity 

@@ -1,5 +1,6 @@
 import { FolderOpen, Palette, Type } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Keyboard, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePoem } from '../../context/PoemContext';
@@ -15,6 +16,7 @@ interface BottomToolbarProps {
 
 export default function BottomToolbar({ onOpenDrawer, activeToolbar, setActiveToolbar, isLargeScreen }: BottomToolbarProps) {
   const { isEditing } = usePoem();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
   if (!isEditing || isLargeScreen) return null;
@@ -32,18 +34,18 @@ export default function BottomToolbar({ onOpenDrawer, activeToolbar, setActiveTo
         <View style={styles.pill}>
           <ToolbarButton 
             icon={<FolderOpen size={18} color="#4B5563" />} 
-            label="Drawer" 
+            label={t('editor.drawer')} 
             onPress={onOpenDrawer} 
           />
           <ToolbarButton 
             icon={<Palette size={18} color={activeToolbar === 'stationery' ? "#3B82F6" : "#4B5563"} />} 
-            label="Stationery" 
+            label={t('editor.stationery')} 
             isActive={activeToolbar === 'stationery'}
             onPress={() => toggleToolbar('stationery')} 
           />
           <ToolbarButton 
             icon={<Type size={18} color={activeToolbar === 'font' ? "#3B82F6" : "#4B5563"} />} 
-            label="Font" 
+            label={t('editor.font')} 
             isActive={activeToolbar === 'font'}
             onPress={() => toggleToolbar('font')} 
           />

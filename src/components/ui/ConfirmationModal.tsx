@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface ConfirmationModalProps {
@@ -16,12 +17,16 @@ export default function ConfirmationModal({
   visible,
   title,
   message,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
+  confirmText,
+  cancelText,
   onConfirm,
   onCancel,
   variant = 'default',
 }: ConfirmationModalProps) {
+  const { t } = useTranslation();
+  const effectiveConfirmText = confirmText || t('common.confirm');
+  const effectiveCancelText = cancelText || t('common.cancel');
+
   if (!visible) return null;
 
   return (
@@ -41,7 +46,7 @@ export default function ConfirmationModal({
               style={[styles.button, styles.cancelButton]} 
               onPress={onCancel}
             >
-              <Text style={styles.cancelButtonText}>{cancelText}</Text>
+              <Text style={styles.cancelButtonText}>{effectiveCancelText}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
@@ -51,7 +56,7 @@ export default function ConfirmationModal({
               ]} 
               onPress={onConfirm}
             >
-              <Text style={styles.confirmButtonText}>{confirmText}</Text>
+              <Text style={styles.confirmButtonText}>{effectiveConfirmText}</Text>
             </TouchableOpacity>
           </View>
         </View>

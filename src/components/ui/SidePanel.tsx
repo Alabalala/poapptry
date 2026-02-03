@@ -1,5 +1,6 @@
 import { Stamp, Type } from 'lucide-react-native';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { FontPanelContent } from './FontToolbar';
 import { StationeryPanelContent } from './StationeryToolbar';
@@ -8,6 +9,7 @@ export default function SidePanel() {
   const [activeTool, setActiveTool] = useState<'font' | 'stationery'>('font');
   const { width } = useWindowDimensions();
   const isLargeScreen = width >= 1024;
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.container, isLargeScreen && { width: '50%' }]}>
@@ -18,7 +20,7 @@ export default function SidePanel() {
           onPress={() => setActiveTool('font')}
         >
           <Type size={18} color={activeTool === 'font' ? '#111827' : '#6B7280'} />
-          <Text style={[styles.tabText, activeTool === 'font' && styles.activeTabText]}>Text</Text>
+          <Text style={[styles.tabText, activeTool === 'font' && styles.activeTabText]}>{t('editor.text')}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -26,7 +28,7 @@ export default function SidePanel() {
           onPress={() => setActiveTool('stationery')}
         >
           <Stamp size={18} color={activeTool === 'stationery' ? '#111827' : '#6B7280'} />
-          <Text style={[styles.tabText, activeTool === 'stationery' && styles.activeTabText]}>Stationery</Text>
+          <Text style={[styles.tabText, activeTool === 'stationery' && styles.activeTabText]}>{t('editor.stationery')}</Text>
         </TouchableOpacity>
       </View>
 

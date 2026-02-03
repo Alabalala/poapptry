@@ -6,7 +6,10 @@
     "delete": "Delete",
     "edit": "Edit",
     "confirm": "Confirm",
-    "error": "Error"
+    "error": "Error",
+    "done": "Done",
+    "share": "Share",
+    "download": "Download"
   },
   "auth": {
     "welcomeBack": "Welcome Back",
@@ -19,7 +22,8 @@
     "signUp": "Sign Up",
     "orContinueWith": "Or continue with",
     "dontHaveAccount": "Don't have an account?",
-    "alreadyHaveAccount": "Already have an account?"
+    "alreadyHaveAccount": "Already have an account?",
+    "saveProgressPrompt": "Don't lose your progress, sign up for free to save your poems"
   },
   "drawer": {
     "title": "Poem Drawer",
@@ -42,6 +46,33 @@
     "untitledPoem": "Untitled Poem",
     "tapToEdit": "Tap to edit",
     "sharePoem": "Share Poem",
-    "shareError": "Failed to share image"
+    "shareError": "Failed to share image",
+    "text": "Text",
+    "textStyle": "Text Style",
+    "stationery": "Stationery",
+    "font": "Font",
+    "drawer": "Drawer",
+    "tools": "Tools",
+    "pasteWebOnly": "Paste is currently only supported on Web.",
+    "pasteError": "Failed to paste. Please ensure you allow clipboard access.",
+    "clipboardEmpty": "Clipboard is empty"
+  },
+  "actions": {
+    "shareText": "Share Text",
+    "savePng": "Save as PNG",
+    "clearStationery": "Clear Stationery",
+    "deletePoem": "Delete Poem"
+  },
+  "modals": {
+    "deleteStationery": {
+      "title": "Remove All Stationery?",
+      "message": "This will remove all stamps, washi tapes, and bookmarks from your poem.",
+      "confirm": "Remove All"
+    },
+    "deletePoem": {
+      "title": "Delete Poem?",
+      "message": "This will clear your poem content and remove all decorations. This action cannot be undone.",
+      "confirm": "Delete Poem"
+    }
   }
 }

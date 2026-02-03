@@ -2,6 +2,7 @@ import { FONT_CAPABILITIES } from '@/constants/ThemeRegistry';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AlignCenter, AlignLeft, AlignRight, Bold, Check, ChevronLeft, ChevronRight, Italic, Plus, Underline } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Keyboard, NativeScrollEvent, NativeSyntheticEvent, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePoem } from '../../context/PoemContext';
@@ -29,6 +30,7 @@ const COLORS = [
 
 export default function FontToolbar({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const { width } = useWindowDimensions();
+  const { t } = useTranslation();
   
   if (!visible) return null;
 
@@ -48,9 +50,9 @@ export default function FontToolbar({ visible, onClose }: { visible: boolean; on
   return (
     <View style={[styles.container, containerStyle]}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Text Style</Text>
+        <Text style={styles.headerTitle}>{t('editor.textStyle')}</Text>
         <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Text style={styles.closeButton}>Done</Text>
+          <Text style={styles.closeButton}>{t('common.done')}</Text>
         </TouchableOpacity>
       </View>
       <FontPanelContent onClose={onClose} />

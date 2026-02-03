@@ -9,6 +9,7 @@ import * as Sharing from 'expo-sharing';
 import html2canvas from 'html2canvas';
 import { Edit2, Menu } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Keyboard, Platform, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
@@ -42,6 +43,7 @@ export default function Desk() {
   const [paperLayout, setPaperLayout] = useState({ width: 0, height: 0 });
   const [actualPaperSize, setActualPaperSize] = useState({ width: 0, height: 0 });
   const viewShotRef = useRef<View>(null);
+  const { t } = useTranslation();
 
   const fontCaps = FONT_CAPABILITIES[activeConfig.fontId] || { supportsBold: false, supportsItalic: false };
   const shouldUseBold = activeConfig.isBold && fontCaps.supportsBold;
@@ -97,16 +99,16 @@ export default function Desk() {
 
         await Sharing.shareAsync(uri, {
           mimeType: 'image/png',
-          dialogTitle: 'Share Poem',
+          dialogTitle: t('editor.sharePoem'),
           UTI: 'public.png'
         });
       } else {
         console.error('viewShotRef is null');
-        alert('Error: Could not find poem view to capture. Please try again.');
+        alert(t('editor.shareError'));
       }
     } catch (error) {
       console.error('Failed to capture or share image:', error);
-      alert('Failed to share image. Please try again. Error: ' + (error instanceof Error ? error.message : String(error)));
+      alert(t('editor.shareError') + ': ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -133,17 +135,17 @@ export default function Desk() {
           // but we are inside Desk component which uses usePoem.
           // PoemContext handles toasts for limits, but here we might want one.
           // Since we don't have showToast here, we can ignore or console.warn.
-          console.warn('Clipboard is empty');
+          console.warn(t('editor.clipboardEmpty'));
         }
       } catch (e) {
         console.warn('Paste failed', e);
         // This usually happens if permission is denied or context is insecure
-        alert('Failed to paste. Please ensure you allow clipboard access.');
+        alert(t('editor.pasteError'));
       }
     } else {
       // Native fallback
       // Since we couldn't install expo-clipboard, we show a message
-      alert('Paste is currently only supported on Web.');
+      alert(t('editor.pasteWebOnly'));
     }
   };
 
@@ -245,7 +247,7 @@ export default function Desk() {
                  onPress={() => toggleEditMode()}
                >
                  <Edit2 size={24} color="#FFF" />
-                 <Text style={styles.editButtonText}>Edit</Text>
+                 <Text style={styles.editButtonText}>{t('common.edit')}</Text>
                </TouchableOpacity>
             </View>
           )}

@@ -6,20 +6,24 @@
     "delete": "Supprimer",
     "edit": "Modifier",
     "confirm": "Confirmer",
-    "error": "Erreur"
+    "error": "Erreur",
+    "done": "Terminé",
+    "share": "Partager",
+    "download": "Télécharger"
   },
   "auth": {
     "welcomeBack": "Bon retour",
     "createAccount": "Créer un compte",
     "signInSubtitle": "Connectez-vous pour accéder à vos poèmes enregistrés",
-    "signUpSubtitle": "Inscrivez-vous pour sauvegarder votre progression",
+    "signUpSubtitle": "Inscrivez-vous pour sauvegarder votre progression et y accéder partout",
     "email": "Email",
     "password": "Mot de passe",
     "signIn": "Se connecter",
     "signUp": "S'inscrire",
     "orContinueWith": "Ou continuer avec",
-    "dontHaveAccount": "Pas encore de compte ?",
-    "alreadyHaveAccount": "Déjà un compte ?"
+    "dontHaveAccount": "Vous n'avez pas de compte ?",
+    "alreadyHaveAccount": "Vous avez déjà un compte ?",
+    "saveProgressPrompt": "Ne perdez pas votre progression, inscrivez-vous gratuitement pour sauvegarder vos poèmes"
   },
   "drawer": {
     "title": "Tiroir à Poèmes",
@@ -42,6 +46,33 @@
     "untitledPoem": "Poème sans titre",
     "tapToEdit": "Appuyez pour modifier",
     "sharePoem": "Partager le poème",
-    "shareError": "Échec du partage de l'image"
+    "shareError": "Échec du partage de l'image",
+    "text": "Texte",
+    "textStyle": "Style de Texte",
+    "stationery": "Papeterie",
+    "font": "Police",
+    "drawer": "Tiroir",
+    "tools": "Outils",
+    "pasteWebOnly": "Le collage est actuellement pris en charge uniquement sur le Web.",
+    "pasteError": "Échec du collage. Veuillez vous assurer d'autoriser l'accès au presse-papiers.",
+    "clipboardEmpty": "Le presse-papiers est vide"
+  },
+  "actions": {
+    "shareText": "Partager le texte",
+    "savePng": "Enregistrer en PNG",
+    "clearStationery": "Effacer la papeterie",
+    "deletePoem": "Supprimer le poème"
+  },
+  "modals": {
+    "deleteStationery": {
+      "title": "Tout retirer ?",
+      "message": "Cela supprimera tous les tampons, rubans washi et marque-pages de votre poème.",
+      "confirm": "Tout retirer"
+    },
+    "deletePoem": {
+      "title": "Supprimer le poème ?",
+      "message": "Cela effacera le contenu de votre poème et supprimera toutes les décorations. Cette action est irréversible.",
+      "confirm": "Supprimer le poème"
+    }
   }
 }

@@ -1,6 +1,7 @@
 import { useToast } from '@/context/ToastContext';
 import { Download, Eraser, Share2, Trash2 } from 'lucide-react-native';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, Platform, Share, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePoem } from '../../context/PoemContext';
@@ -17,6 +18,7 @@ export default function PoemActionsMenu({ visible, onClose, onShareImage }: Poem
   const { removeAllDecorations, resetPoem, title, pages } = usePoem();
   const { showToast } = useToast();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   
   const [confirmModal, setConfirmModal] = useState<{
     visible: boolean;
@@ -30,7 +32,7 @@ export default function PoemActionsMenu({ visible, onClose, onShareImage }: Poem
     title: '',
     message: '',
     onConfirm: () => {},
-    confirmText: 'Confirm',
+    confirmText: t('common.confirm'),
     variant: 'default',
   });
 
@@ -51,16 +53,16 @@ export default function PoemActionsMenu({ visible, onClose, onShareImage }: Poem
       onClose();
     } catch (error) {
       console.error('Error sharing:', error);
-      showToast('Failed to share poem', 'error');
+      showToast(t('editor.shareError'), 'error');
     }
   };
 
   const handleDeleteStationery = () => {
     setConfirmModal({
       visible: true,
-      title: "Remove All Stationery?",
-      message: "This will remove all stamps, washi tapes, and bookmarks from your poem.",
-      confirmText: "Remove All",
+      title: t('modals.deleteStationery.title'),
+      message: t('modals.deleteStationery.message'),
+      confirmText: t('modals.deleteStationery.confirm'),
       variant: 'destructive',
       onConfirm: () => {
         removeAllDecorations();
@@ -73,9 +75,9 @@ export default function PoemActionsMenu({ visible, onClose, onShareImage }: Poem
   const handleDeletePoem = () => {
     setConfirmModal({
       visible: true,
-      title: "Delete Poem?",
-      message: "This will clear your poem content and remove all decorations. This action cannot be undone.",
-      confirmText: "Delete Poem",
+      title: t('modals.deletePoem.title'),
+      message: t('modals.deletePoem.message'),
+      confirmText: t('modals.deletePoem.confirm'),
       variant: 'destructive',
       onConfirm: () => {
         resetPoem();
@@ -104,7 +106,7 @@ export default function PoemActionsMenu({ visible, onClose, onShareImage }: Poem
               >
                 <TouchableOpacity style={styles.menuItem} onPress={handleShare}>
                   <Share2 size={20} color="#374151" />
-                  <Text style={styles.menuItemText}>Share Text</Text>
+                  <Text style={styles.menuItemText}>{t('actions.shareText')}</Text>
                 </TouchableOpacity>
 
                 {onShareImage && (
@@ -113,7 +115,7 @@ export default function PoemActionsMenu({ visible, onClose, onShareImage }: Poem
                     onClose();
                   }}>
                     <Download size={20} color="#374151" />
-                    <Text style={styles.menuItemText}>Save as PNG</Text>
+                    <Text style={styles.menuItemText}>{t('actions.savePng')}</Text>
                   </TouchableOpacity>
                 )}
 
@@ -121,12 +123,12 @@ export default function PoemActionsMenu({ visible, onClose, onShareImage }: Poem
 
                 <TouchableOpacity style={styles.menuItem} onPress={handleDeleteStationery}>
                   <Eraser size={20} color="#374151" />
-                  <Text style={styles.menuItemText}>Clear Stationery</Text>
+                  <Text style={styles.menuItemText}>{t('actions.clearStationery')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.menuItem} onPress={handleDeletePoem}>
                   <Trash2 size={20} color="#EF4444" />
-                  <Text style={[styles.menuItemText, styles.destructiveText]}>Delete Poem</Text>
+                  <Text style={[styles.menuItemText, styles.destructiveText]}>{t('actions.deletePoem')}</Text>
                 </TouchableOpacity>
               </View>
             </TouchableWithoutFeedback>

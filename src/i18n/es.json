@@ -6,26 +6,30 @@
     "delete": "Eliminar",
     "edit": "Editar",
     "confirm": "Confirmar",
-    "error": "Error"
+    "error": "Error",
+    "done": "Listo",
+    "share": "Compartir",
+    "download": "Descargar"
   },
   "auth": {
     "welcomeBack": "Bienvenido de nuevo",
-    "createAccount": "Crear cuenta",
+    "createAccount": "Crear Cuenta",
     "signInSubtitle": "Inicia sesión para acceder a tus poemas guardados",
     "signUpSubtitle": "Regístrate para guardar tu progreso y acceder desde cualquier lugar",
     "email": "Correo electrónico",
     "password": "Contraseña",
-    "signIn": "Iniciar sesión",
+    "signIn": "Iniciar Sesión",
     "signUp": "Registrarse",
     "orContinueWith": "O continuar con",
     "dontHaveAccount": "¿No tienes una cuenta?",
-    "alreadyHaveAccount": "¿Ya tienes una cuenta?"
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+    "saveProgressPrompt": "No pierdas tu progreso, regístrate gratis para guardar tus poemas"
   },
   "drawer": {
     "title": "Cajón de Poemas",
     "guestTitle": "¡Guarda tus poemas!",
     "guestMessage": "Para guardar tus poemas y ver tu cajón, ¡regístrate gratis!",
-    "signInOrSignUp": "Registrarse / Iniciar sesión",
+    "signInOrSignUp": "Registrarse / Iniciar Sesión",
     "myPoems": "Tus Poemas",
     "newPoem": "Nuevo Poema",
     "untitledPoem": "Sin título",
@@ -33,15 +37,42 @@
     "deletePoemConfirm": "¿Estás seguro de que quieres eliminar este poema?",
     "deleteFailed": "Error al eliminar el poema",
     "emptyState": "Aún no hay poemas. ¡Crea uno!",
-    "settings": "Configuración",
+    "settings": "Ajustes",
     "language": "Idioma",
-    "signOut": "Cerrar sesión",
+    "signOut": "Cerrar Sesión",
     "open": "Abrir"
   },
   "editor": {
     "untitledPoem": "Poema sin título",
     "tapToEdit": "Toca para editar",
     "sharePoem": "Compartir Poema",
-    "shareError": "Error al compartir imagen"
+    "shareError": "Error al compartir imagen",
+    "text": "Texto",
+    "textStyle": "Estilo de Texto",
+    "stationery": "Papelería",
+    "font": "Fuente",
+    "drawer": "Cajón",
+    "tools": "Herramientas",
+    "pasteWebOnly": "Pegar solo es compatible en la web actualmente.",
+    "pasteError": "Error al pegar. Asegúrate de permitir el acceso al portapapeles.",
+    "clipboardEmpty": "El portapapeles está vacío"
+  },
+  "actions": {
+    "shareText": "Compartir Texto",
+    "savePng": "Guardar como PNG",
+    "clearStationery": "Borrar Papelería",
+    "deletePoem": "Eliminar Poema"
+  },
+  "modals": {
+    "deleteStationery": {
+      "title": "¿Quitar toda la papelería?",
+      "message": "Esto eliminará todos los sellos, cintas washi y marcadores de tu poema.",
+      "confirm": "Quitar todo"
+    },
+    "deletePoem": {
+      "title": "¿Eliminar poema?",
+      "message": "Esto borrará el contenido de tu poema y eliminará todas las decoraciones. Esta acción no se puede deshacer.",
+      "confirm": "Eliminar poema"
+    }
   }
 }
