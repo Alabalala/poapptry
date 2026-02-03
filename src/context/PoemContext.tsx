@@ -48,6 +48,7 @@ export interface TextBox {
   height: number;
   rotation: number;
   zIndex: number;
+  isPercentage?: boolean;
   style: {
     fontFamily: string;
     fontSize: number;
@@ -160,8 +161,41 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
   const [selectedDecorationId, setSelectedDecorationIdState] = useState<string | null>(null);
   const [selectedTextBoxId, setSelectedTextBoxIdState] = useState<string | null>(null);
   
+  // Helper to cleanup empty text boxes when deselecting
+  const cleanupEmptyTextBox = (idToCheck: string) => {
+    setPages(prevPages => {
+      // Find the text box
+      const page = prevPages.find(p => p.textBoxes.some(t => t.id === idToCheck));
+      if (!page) return prevPages;
+      
+      const textBox = page.textBoxes.find(t => t.id === idToCheck);
+      if (!textBox) return prevPages;
+
+      // Check if content is empty or just whitespace
+      const content = textBox.content.replace(/<[^>]*>?/gm, '').trim();
+      
+      if (content.length === 0) {
+        // Remove it
+        return prevPages.map(p => {
+          if (p.id !== page.id) return p;
+          return {
+            ...p,
+            textBoxes: p.textBoxes.filter(t => t.id !== idToCheck)
+          };
+        });
+      }
+      
+      return prevPages;
+    });
+  };
+
   // Wrappers to enforce single selection rule (mutually exclusive)
   const setSelectedDecorationId = (id: string | null) => {
+    // If we are deselecting a text box to select a decoration, check if we need to cleanup
+    if (selectedTextBoxId && id) {
+      cleanupEmptyTextBox(selectedTextBoxId);
+    }
+    
     setSelectedDecorationIdState(id);
     if (id) {
       setSelectedTextBoxIdState(null);
@@ -169,6 +203,11 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const setSelectedTextBoxId = (id: string | null) => {
+    // If we are switching from one text box to another (or to nothing), check cleanup
+    if (selectedTextBoxId && selectedTextBoxId !== id) {
+      cleanupEmptyTextBox(selectedTextBoxId);
+    }
+
     setSelectedTextBoxIdState(id);
     if (id) {
       setSelectedDecorationIdState(null);
@@ -245,86 +284,31 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
     processed.title = savedPoem.title;
     processed.activeConfig = savedPoem.activeConfig;
 
-    // Pages Migration
-    if (savedPoem.pages) {
-      processed.pages = savedPoem.pages.map((p: any) => {
-        if (p.textBoxes) return p;
-        
-        // If old format with content string, convert to first text box
-        if (p.content) {
-          return {
-            ...p,
-            textBoxes: [{
-              id: Math.random().toString(36).substr(2, 9),
-              content: p.content,
-              x: 40,
-              y: 40,
-              width: 300,
-              height: 200,
-              rotation: 0,
-              zIndex: 1,
-              style: {
-                fontFamily: savedPoem.activeConfig?.fontId || 'Crimson Text',
-                fontSize: savedPoem.activeConfig?.fontSize === 'small' ? 16 : savedPoem.activeConfig?.fontSize === 'large' ? 22 : 18,
-                textAlign: savedPoem.activeConfig?.textAlign || 'left',
-                color: savedPoem.activeConfig?.inkColor || '#000000',
-              }
-            }]
-          };
-        }
-        
-        // If neither, just return empty textBoxes
-        return { ...p, textBoxes: [] };
-      });
+    // Pages - Basic Validation
+    if (savedPoem.pages && Array.isArray(savedPoem.pages)) {
+      processed.pages = savedPoem.pages;
     } else {
         // Default page if missing
         processed.pages = [{ id: '1', textBoxes: [] }];
     }
     
     // Stamps
-    if (savedPoem.stamps) {
-       // Ensure type property exists if missing
-       processed.stamps = savedPoem.stamps.map((s: any) => ({ ...s, type: s.type || 'stamp' }));
+    if (savedPoem.stamps && Array.isArray(savedPoem.stamps)) {
+       processed.stamps = savedPoem.stamps;
     } else {
        processed.stamps = [];
     }
     
-    // Washi Tapes (Load or Migrate from Fixed)
-    if (savedPoem.washiTapes) {
+    // Washi Tapes
+    if (savedPoem.washiTapes && Array.isArray(savedPoem.washiTapes)) {
       processed.washiTapes = savedPoem.washiTapes;
-    } else if (savedPoem.fixedDecorations?.washiId) {
-       // Migrate fixed washi to new free-floating system
-       const migratedWashi = {
-         id: Math.random().toString(36).substr(2, 9),
-         assetId: savedPoem.fixedDecorations.washiId,
-         type: 'washi',
-         x: 50,
-         y: savedPoem.fixedDecorations.washiPosition === 'bottom' ? 90 : 5,
-         rotation: 0,
-         scale: 1,
-         opacity: 1
-       };
-       processed.washiTapes = [migratedWashi];
     } else {
        processed.washiTapes = [];
     }
 
-    // Bookmarks (Load or Migrate from Fixed)
-    if (savedPoem.bookmarks) {
+    // Bookmarks
+    if (savedPoem.bookmarks && Array.isArray(savedPoem.bookmarks)) {
       processed.bookmarks = savedPoem.bookmarks;
-    } else if (savedPoem.fixedDecorations?.bookmarkId) {
-      // Migrate fixed bookmark to new free-floating system
-      const migratedBookmark = {
-         id: Math.random().toString(36).substr(2, 9),
-         assetId: savedPoem.fixedDecorations.bookmarkId,
-         type: 'bookmark',
-         x: savedPoem.fixedDecorations.bookmarkSide === 'left' ? 5 : 90,
-         y: -10,
-         rotation: 0,
-         scale: 1,
-         opacity: 1
-      };
-      processed.bookmarks = [migratedBookmark];
     } else {
         processed.bookmarks = [];
     }
@@ -464,6 +448,7 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
           height: 8, // Approx 8%
           rotation: 0,
           zIndex: page.textBoxes.length + 1,
+          isPercentage: true,
           style: {
             fontFamily: activeConfig.fontId,
             fontSize: activeConfig.fontSize === 'small' ? 16 : activeConfig.fontSize === 'medium' ? 18 : 22,
@@ -511,6 +496,7 @@ export const PoemProvider = ({ children }: { children: ReactNode }) => {
         x: originalBox.x + 5, // 5% offset
         y: originalBox.y + 5, // 5% offset
         zIndex: page.textBoxes.length + 1,
+        isPercentage: true,
       };
 
       return prevPages.map(p => {

@@ -65,15 +65,17 @@ export default function DraggableTextBox({
   // Typing state: If true, user is editing text. If false, user is moving box.
   const [isTyping, setIsTyping] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
 
   // Track actual rendered size for accurate resizing start
   const actualSizeRef = useRef({ width: 0, height: 0 });
 
   // Sync with prop updates when not interacting
   useEffect(() => {
+    if (isDragging || isResizing) return;
     const newPixels = getPixelValues();
     setLocalLayout(newPixels);
-  }, [textBox.x, textBox.y, textBox.width, textBox.height, paperSize.width, paperSize.height]);
+  }, [textBox.x, textBox.y, textBox.width, textBox.height, paperSize.width, paperSize.height, isDragging, isResizing]);
 
   // Helper to save as percentages
   const updateAsPercentage = (layout: { x: number; y: number; width: number; height: number }) => {
@@ -82,6 +84,7 @@ export default function DraggableTextBox({
       y: (layout.y / paperSize.height) * 100,
       width: (layout.width / paperSize.width) * 100,
       height: (layout.height / paperSize.height) * 100,
+      isPercentage: true,
     });
   };
 
@@ -106,6 +109,7 @@ export default function DraggableTextBox({
   useEffect(() => { wasSelectedRef.current = isSelected; }, [isSelected]);
 
   const initialGesture = useRef({ x: 0, y: 0, width: 0, height: 0 });
+  const initialPaperSize = useRef({ width: 0, height: 0 });
 
   // Update actual size on layout
   const handleLayout = (event: any) => {
@@ -124,6 +128,7 @@ export default function DraggableTextBox({
         isDraggingRef.current = false;
         onSelect();
         initialGesture.current = { ...currentLayoutRef.current };
+        initialPaperSize.current = { ...paperSizeRef.current };
       },
       onPanResponderMove: (_, gestureState) => {
         const { dx, dy } = gestureState;
@@ -157,7 +162,10 @@ export default function DraggableTextBox({
           }, 0);
         } else {
           // Commit move
-          const { width: pWidth, height: pHeight } = paperSizeRef.current;
+          // Use initial paper size to prevent shrinking if paper size changed during drag (e.g. mobile address bar)
+          const pWidth = initialPaperSize.current.width || paperSizeRef.current.width;
+          const pHeight = initialPaperSize.current.height || paperSizeRef.current.height;
+          
           const newX = initialGesture.current.x + dx;
           const newY = initialGesture.current.y + dy;
           const width = initialGesture.current.width;
@@ -169,11 +177,13 @@ export default function DraggableTextBox({
           if (isFullyOutside) {
             onRemove();
           } else {
-            updateAsPercentage({
-              x: newX,
-              y: newY,
-              width: initialGesture.current.width,
-              height: initialGesture.current.height
+            // Calculate percentage based on INITIAL paper size to preserve relative size/position
+            // even if the viewport resized during the interaction
+            onUpdate({
+              x: (newX / pWidth) * 100,
+              y: (newY / pHeight) * 100,
+              width: (width / pWidth) * 100,
+              height: (height / pHeight) * 100,
             });
           }
         }
@@ -194,6 +204,7 @@ export default function DraggableTextBox({
       },
       onPanResponderGrant: (e) => {
         e.stopPropagation?.();
+        setIsResizing(true);
         onSelect();
         initialGesture.current = { 
           ...localLayout,
@@ -235,11 +246,19 @@ export default function DraggableTextBox({
         });
       },
       onPanResponderRelease: () => {
-        updateAsPercentage({
-          x: currentLayoutRef.current.x,
-          y: currentLayoutRef.current.y,
-          width: currentLayoutRef.current.width,
-          height: currentLayoutRef.current.height,
+        setIsResizing(false);
+        
+        // Use initial paper size to calculate final percentages
+        // This prevents jumps if the viewport/paper changed size during interaction
+        const pWidth = initialPaperSize.current.width || paperSizeRef.current.width;
+        const pHeight = initialPaperSize.current.height || paperSizeRef.current.height;
+
+        onUpdate({
+          x: (currentLayoutRef.current.x / pWidth) * 100,
+          y: (currentLayoutRef.current.y / pHeight) * 100,
+          width: (currentLayoutRef.current.width / pWidth) * 100,
+          height: (currentLayoutRef.current.height / pHeight) * 100,
+          isPercentage: true,
         });
       },
     });
@@ -288,8 +307,10 @@ export default function DraggableTextBox({
           top: localLayout.y,
           width: localLayout.width,
           // Lock height during drag to prevent resizing/jumping
-          height: isDragging ? (actualSizeRef.current.height || localLayout.height) : undefined,
-          minHeight: isDragging ? undefined : localLayout.height,
+          // During resizing, we MUST enforce the height to ensure handles stay with the cursor, 
+          // even if content overflows or tries to push it.
+          height: (isDragging || isResizing) ? (isResizing ? localLayout.height : (actualSizeRef.current.height || localLayout.height)) : undefined,
+          minHeight: (isDragging || isResizing) ? undefined : localLayout.height,
           zIndex: isSelected ? 100 : textBox.zIndex,
           borderWidth: isSelected ? 1 : 0,
           borderColor: '#3B82F6',
